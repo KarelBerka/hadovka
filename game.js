@@ -302,11 +302,31 @@ class Snake {
         return false;
       }
       
+      // Check mines
+      for (let m of this.game.mines) {
+        if (m.x === tx && m.y === ty) {
+          if (this.activeEffect !== 'gold_mushroom') {
+            return false;
+          }
+        }
+      }
+      
       // Check snakes body parts
       for (let s of this.game.snakes) {
         if (!s.alive) continue;
-        for (let seg of s.body) {
-          if (seg.x === tx && seg.y === ty) {
+        
+        const occupied = [];
+        s.body.forEach((seg, idx) => {
+          occupied.push({ x: seg.x, y: seg.y });
+          if (s.activeEffect === 'gold_mushroom') {
+            const offsets = this.game.getSegmentSidewaysOffsets(s, idx);
+            occupied.push(offsets[0]);
+            occupied.push(offsets[1]);
+          }
+        });
+        
+        for (let cell of occupied) {
+          if (cell.x === tx && cell.y === ty) {
             return false;
           }
         }
@@ -466,7 +486,9 @@ const Game = {
   snakes: [],
   fruits: [],
   particles: [],
+  mines: [],
   obstacles: new Set(),
+  mineSpawnTimer: 0,
   
   // Player settings (filled during lobby interaction)
   lobbyPlayers: [
@@ -657,7 +679,13 @@ const Game = {
   
   initEditor() {
     const canvas = document.getElementById('editor-canvas');
-    const ctx = canvas.getContext('2d');
+    
+    // 1. Clone canvas to clean up previous event listeners
+    const newCanvas = canvas.cloneNode(true);
+    canvas.parentNode.replaceChild(newCanvas, canvas);
+    
+    // 2. Get context of the NEW canvas now in DOM
+    const ctx = newCanvas.getContext('2d');
     
     this.editorObstacles = new Set(this.customObstacles);
     this.editorTool = 'draw';
@@ -730,7 +758,7 @@ const Game = {
     let isDrawing = false;
     
     const handleMouseEvent = (e) => {
-      const rect = canvas.getBoundingClientRect();
+      const rect = newCanvas.getBoundingClientRect(); // Use newCanvas!
       const mx = e.clientX - rect.left;
       const my = e.clientY - rect.top;
       
@@ -753,9 +781,6 @@ const Game = {
         drawEditorGrid();
       }
     };
-    
-    const newCanvas = canvas.cloneNode(true);
-    canvas.parentNode.replaceChild(newCanvas, canvas);
     
     newCanvas.addEventListener('mousedown', (e) => {
       isDrawing = true;
@@ -1136,6 +1161,8 @@ const Game = {
     // Clean up entities
     this.fruits = [];
     this.particles = [];
+    this.mines = [];
+    this.mineSpawnTimer = 0;
     
     // Spawn initial fruits. More players -> more fruits.
     const fruitCount = Math.max(2, this.snakes.length);
@@ -1273,6 +1300,50 @@ const Game = {
     }
   },
   
+  spawnDisappearParticles(x, y, color) {
+    const px = x * CELL_SIZE + CELL_SIZE / 2;
+    const py = y * CELL_SIZE + CELL_SIZE / 2;
+    for (let i = 0; i < 8; i++) {
+      this.particles.push(new Particle(px, py, color));
+    }
+  },
+  
+  spawnMine() {
+    if (this.mines.length >= 5) return;
+    
+    let mx, my;
+    let safe = false;
+    let attempts = 0;
+    
+    while (!safe && attempts < 100) {
+      attempts++;
+      mx = Math.floor(Math.random() * GRID_SIZE);
+      my = Math.floor(Math.random() * GRID_SIZE);
+      
+      safe = true;
+      if (this.obstacles.has(`${mx},${my}`)) safe = false;
+      if (this.portalsEnabled && ((mx === 10 && my === 20) || (mx === 30 && my === 20))) safe = false;
+      if (this.fruits.some(f => f.x === mx && f.y === my)) safe = false;
+      if (this.mines.some(m => m.x === mx && m.y === my)) safe = false;
+      
+      for (let snake of this.snakes) {
+        if (!snake.alive) continue;
+        for (let seg of snake.body) {
+          if (seg.x === mx && seg.y === my) safe = false;
+        }
+      }
+    }
+    
+    if (safe) {
+      this.mines.push({
+        x: mx,
+        y: my,
+        lifetime: 12000,
+        color: '#ff3300'
+      });
+    }
+  },
+  
   pauseGame() {
     if (this.state !== 'PLAYING') return;
     this.state = 'PAUSED';
@@ -1301,6 +1372,24 @@ const Game = {
     // Protect against huge dt values on tab suspension
     const activeDt = Math.min(dt, 100);
     const dtRatio = activeDt / 16.666; // Base calculations relative to 60fps
+    
+    // Update mines spawn and lifetimes
+    if (this.state === 'PLAYING') {
+      this.mineSpawnTimer += activeDt;
+      if (this.mineSpawnTimer >= 5000) {
+        this.mineSpawnTimer = 0;
+        this.spawnMine();
+      }
+      
+      for (let i = this.mines.length - 1; i >= 0; i--) {
+        const mine = this.mines[i];
+        mine.lifetime -= activeDt;
+        if (mine.lifetime <= 0) {
+          this.spawnDisappearParticles(mine.x, mine.y, '#ff5500');
+          this.mines.splice(i, 1);
+        }
+      }
+    }
     
     // Update individual snakes based on speed modifiers
     this.snakes.forEach(snake => {
@@ -1419,6 +1508,35 @@ const Game = {
       }
     }
     
+    // Mine crash check
+    let hitMineIndex = -1;
+    for (let i = 0; i < this.mines.length; i++) {
+      const mine = this.mines[i];
+      if (mine.x === nextX && mine.y === nextY) {
+        hitMineIndex = i;
+        break;
+      }
+    }
+    
+    if (hitMineIndex !== -1) {
+      const mine = this.mines[hitMineIndex];
+      this.mines.splice(hitMineIndex, 1);
+      
+      // Explosion sound & particles
+      SoundFX.play('crash');
+      const px = mine.x * CELL_SIZE + CELL_SIZE / 2;
+      const py = mine.y * CELL_SIZE + CELL_SIZE / 2;
+      for (let pCount = 0; pCount < 25; pCount++) {
+        this.particles.push(new Particle(px, py, '#ff3300'));
+        this.particles.push(new Particle(px, py, '#ffaa00'));
+      }
+      
+      if (snake.activeEffect !== 'gold_mushroom') {
+        this.killSnake(snake, 'Had vybuchl na mině!');
+        return;
+      }
+    }
+    
     // Other snake / self body crash
     for (let other of this.snakes) {
       if (!other.alive) continue;
@@ -1436,6 +1554,11 @@ const Game = {
       for (let cell of occupied) {
         if (cell.x === nextX && cell.y === nextY) {
           if (snake.activeEffect !== 'gold_mushroom') {
+            // Reward 25 points to the other snake if we crashed into them (and it's not ourselves)
+            if (other.id !== snake.id) {
+              other.score += 25;
+              this.updateScoreboardUI();
+            }
             this.killSnake(snake, `Kolize s tělem (${other.name})!`);
             return;
           }
@@ -1804,6 +1927,64 @@ const Game = {
         this.ctx.restore();
       }
     }
+    
+    // 3.7 Draw mines
+    this.mines.forEach(mine => {
+      const px = mine.x * CELL_SIZE;
+      const py = mine.y * CELL_SIZE;
+      const cx = px + CELL_SIZE / 2;
+      const cy = py + CELL_SIZE / 2;
+      const pulse = Math.sin(performance.now() * 0.01) * 2;
+      
+      if (isRetro) {
+        this.ctx.save();
+        // 8-bit black sea mine with flashing red spikes
+        this.ctx.fillStyle = '#1c1c1c';
+        this.ctx.fillRect(px + 4, py + 4, CELL_SIZE - 8, CELL_SIZE - 8);
+        
+        const flash = Math.floor(performance.now() / 150) % 2 === 0;
+        this.ctx.fillStyle = flash ? '#ff0000' : '#1c1c1c';
+        this.ctx.fillRect(px + 8, py + 1, 4, 3); // top
+        this.ctx.fillRect(px + 8, py + CELL_SIZE - 4, 4, 3); // bottom
+        this.ctx.fillRect(px + 1, py + 8, 3, 4); // left
+        this.ctx.fillRect(px + CELL_SIZE - 4, py + 8, 3, 4); // right
+        
+        // yellow core
+        this.ctx.fillStyle = '#ffcc00';
+        this.ctx.fillRect(px + 8, py + 8, 4, 4);
+        this.ctx.restore();
+      } else {
+        // Glowing Neon Mine
+        this.ctx.save();
+        this.ctx.shadowBlur = 12 + pulse;
+        this.ctx.shadowColor = '#ff003c';
+        
+        this.ctx.strokeStyle = '#ff003c';
+        this.ctx.lineWidth = 2;
+        this.ctx.beginPath();
+        this.ctx.arc(cx, cy, CELL_SIZE / 2 - 4, 0, Math.PI * 2);
+        this.ctx.stroke();
+        
+        const flash = Math.floor(performance.now() / 200) % 2 === 0;
+        this.ctx.fillStyle = flash ? '#ffffff' : '#ff003c';
+        this.ctx.beginPath();
+        this.ctx.arc(cx, cy, 3, 0, Math.PI * 2);
+        this.ctx.fill();
+        
+        this.ctx.lineWidth = 1.5;
+        this.ctx.strokeStyle = '#ffd700';
+        this.ctx.beginPath();
+        for (let a = 0; a < 8; a++) {
+          const angle = (a * Math.PI) / 4;
+          const r1 = CELL_SIZE / 2 - 4;
+          const r2 = CELL_SIZE / 2 - 1;
+          this.ctx.moveTo(cx + Math.cos(angle) * r1, cy + Math.sin(angle) * r1);
+          this.ctx.lineTo(cx + Math.cos(angle) * r2, cy + Math.sin(angle) * r2);
+        }
+        this.ctx.stroke();
+        this.ctx.restore();
+      }
+    });
     
     // 4. Draw fruits
     this.fruits.forEach(fruit => {

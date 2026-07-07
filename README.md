@@ -18,11 +18,14 @@ Moderní, plně přizpůsobitelná hra Had běžící přímo ve vašem webovém
    *   *Těžká:* Agresivní point-hunting cesta k ovoci, 2-taktový lookahead výpočet bezpečných únikových cest a okamžité požíraní okolních plodů.
 4. **Portály v aréně:**
    Možnost zapnout dvojici telepatických portálů (Blue & Orange), které okamžitě přenesou hada na druhý konec mapy za doprovodu syntezátorových efektů a částic.
-5. **Editor vlastních map (Map Creator):**
+5. **Miny a Likvidační odměny (Novinka!):**
+   *   **Dočasné miny:** Na náhodných volných místech se na dobu 12 sekund objevují výbušné miny (blikající retro námořní mina nebo zářící červený neonový kruh). Pokud do ní had narazí, vybuchne a umírá (s výjimkou hadů pod vlivem zlaté houbičky).
+   *   **Likvidační odměna:** Pokud svým tělem zablokujete cestu cizímu hadovi a ten do vás narazí (tudíž ho zlikvidujete), obdržíte okamžitě bonusových **+25 bodů** k vašemu skóre!
+6. **Editor vlastních map (Map Creator):**
    Interaktivní canvas mřížka přímo v lobby, ve které si můžete nakreslit libovolné překážky a ty následně hrát na typu mapy "Vlastní".
-6. **Síň slávy (Hall of Fame):**
+7. **Síň slávy (Hall of Fame):**
    Top 10 nejlepších skóre ukládaných trvale do prohlížeče (`localStorage`).
-7. **Dva vizuální styly:**
+8. **Dva vizuální styly:**
    *   **Neonový Cyberpunk:** Tmavá zářící neonová aréna se stíny, pulzováním a částicovými explozemi.
    *   **Retro Pixel Les:** Změní hru na 8-bitový lesní trávník s pixel-art stromy, texturovanými šupinatými hady, otáčejícíma se očima a klasickým ovocem.
 
