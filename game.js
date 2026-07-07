@@ -970,6 +970,22 @@ const Game = {
       }
     });
     
+    // Sound settings
+    document.getElementById('sound-toggle-btn').addEventListener('click', () => {
+      this.soundEnabled = !this.soundEnabled;
+      SoundFX.muted = !this.soundEnabled;
+      document.getElementById('sound-toggle-btn').innerText = this.soundEnabled ? '🔊' : '🔇';
+    });
+    
+    // Help instructions
+    const helpModal = document.getElementById('help-modal');
+    document.getElementById('help-toggle-btn').addEventListener('click', () => {
+      helpModal.classList.add('active');
+    });
+    document.getElementById('close-help-btn').addEventListener('click', () => {
+      helpModal.classList.remove('active');
+    });
+    
     // Lobby launcher
     document.getElementById('start-game-btn').addEventListener('click', () => {
       this.initGame();
