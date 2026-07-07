@@ -1571,70 +1571,84 @@ const Game = {
     snake.body.unshift(newHead);
     
     // Check fruit consumption
-    let eatenIndex = -1;
+    const eatenIndices = [];
+    
+    // Find all cells occupied by this snake (including the head we just unshifted)
+    const occupied = [];
+    snake.body.forEach((seg, idx) => {
+      occupied.push({ x: seg.x, y: seg.y });
+      if (snake.activeEffect === 'gold_mushroom') {
+        const offsets = this.getSegmentSidewaysOffsets(snake, idx);
+        occupied.push(offsets[0]);
+        occupied.push(offsets[1]);
+      }
+    });
+    
     for (let i = 0; i < this.fruits.length; i++) {
       const f = this.fruits[i];
-      if (f.x === nextX && f.y === nextY) {
-        eatenIndex = i;
-        break;
+      const touched = occupied.some(cell => cell.x === f.x && cell.y === f.y);
+      if (touched) {
+        eatenIndices.push(i);
       }
     }
     
-    if (eatenIndex !== -1) {
-      const fruit = this.fruits[eatenIndex];
-      this.fruits.splice(eatenIndex, 1);
+    if (eatenIndices.length > 0) {
+      // Sort indices descending to splice safely
+      eatenIndices.sort((a, b) => b - a);
       
-      // Grow and score points
-      snake.score += fruit.points;
-      
-      // Spawning growth sections (minus 1 because head is already unshifted)
-      const extraGrow = fruit.grow - 1;
-      for (let g = 0; g < extraGrow; g++) {
-        // Just duplicate the tail segment
-        const tail = snake.body[snake.body.length - 1];
-        snake.body.push({ x: tail.x, y: tail.y });
-      }
-      
-      // Apply power-up modifiers
-      if (fruit.effect) {
-        if (fruit.effect === 'mystery') {
-          // Select a random fruit effect (except mystery itself)
-          const pool = [FRUIT_TYPES.NORMAL, FRUIT_TYPES.GOLDEN, FRUIT_TYPES.CHILI, FRUIT_TYPES.BERRY, FRUIT_TYPES.MUSHROOM];
-          const choice = pool[Math.floor(Math.random() * pool.length)];
-          
-          if (choice.type !== 'NORMAL') {
-            // Apply bonus points & growth
-            snake.score += choice.points;
-            const extra = choice.grow - 1;
-            for (let g = 0; g < extra; g++) {
-              const tail = snake.body[snake.body.length - 1];
-              snake.body.push({ x: tail.x, y: tail.y });
-            }
-          }
-          
-          if (choice.effect) {
-            snake.activeEffect = choice.effect;
-            snake.effectTimer = choice.duration;
-          }
-        } else {
-          snake.activeEffect = fruit.effect;
-          snake.effectTimer = fruit.duration;
+      eatenIndices.forEach(idx => {
+        const fruit = this.fruits[idx];
+        this.fruits.splice(idx, 1);
+        
+        // Grow and score points
+        snake.score += fruit.points;
+        
+        // Spawning growth sections (minus 1 because head is already unshifted)
+        const extraGrow = fruit.grow - 1;
+        for (let g = 0; g < extraGrow; g++) {
+          const tail = snake.body[snake.body.length - 1];
+          snake.body.push({ x: tail.x, y: tail.y });
         }
-      }
-      
-      // Sounds & explosion particles
-      SoundFX.play('eat');
-      const px = nextX * CELL_SIZE + CELL_SIZE / 2;
-      const py = nextY * CELL_SIZE + CELL_SIZE / 2;
-      for (let pCount = 0; pCount < 15; pCount++) {
-        this.particles.push(new Particle(px, py, fruit.color));
-      }
+        
+        // Apply power-up modifiers
+        if (fruit.effect) {
+          if (fruit.effect === 'mystery') {
+            const pool = [FRUIT_TYPES.NORMAL, FRUIT_TYPES.GOLDEN, FRUIT_TYPES.CHILI, FRUIT_TYPES.BERRY, FRUIT_TYPES.MUSHROOM];
+            const choice = pool[Math.floor(Math.random() * pool.length)];
+            
+            if (choice.type !== 'NORMAL') {
+              snake.score += choice.points;
+              const extra = choice.grow - 1;
+              for (let g = 0; g < extra; g++) {
+                const tail = snake.body[snake.body.length - 1];
+                snake.body.push({ x: tail.x, y: tail.y });
+              }
+            }
+            
+            if (choice.effect) {
+              snake.activeEffect = choice.effect;
+              snake.effectTimer = choice.duration;
+            }
+          } else {
+            snake.activeEffect = fruit.effect;
+            snake.effectTimer = fruit.duration;
+          }
+        }
+        
+        // Sounds & explosion particles
+        SoundFX.play('eat');
+        const px = fruit.x * CELL_SIZE + CELL_SIZE / 2;
+        const py = fruit.y * CELL_SIZE + CELL_SIZE / 2;
+        for (let pCount = 0; pCount < 15; pCount++) {
+          this.particles.push(new Particle(px, py, fruit.color));
+        }
+        
+        // Spawn replacement fruit
+        this.spawnFruit();
+      });
       
       // Update UI panels
       this.updateScoreboardUI();
-      
-      // Spawn replacements
-      this.spawnFruit();
     } else {
       // Normal walk, remove tail segment
       snake.body.pop();
