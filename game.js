@@ -908,6 +908,11 @@ const Game = {
         this.initGame();
         return;
       }
+      if (this.state === 'GAME_OVER' && e.code === 'Escape') {
+        e.preventDefault();
+        this.showScreen('lobby-screen');
+        return;
+      }
       
       // 2. Pause toggle
       if ((e.code === 'Space' || e.code === 'Escape') && this.state === 'PLAYING') {
