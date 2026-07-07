@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Had: Cyber Neon Arena</title>
+  <link rel="stylesheet" href="index.css">
+</head>
+<body>
+  <div id="app-container">
+    <!-- Header -->
+    <header>
+      <h1>HAD // NEON_ARENA</h1>
+      <div class="header-actions">
+        <!-- Sound Toggle -->
+        <button id="sound-toggle-btn" class="icon-btn" title="Zapnout/Vypnout zvuky">
+          🔊
+        </button>
+        <!-- Hall of Fame Toggle -->
+        <button id="fame-toggle-btn" class="icon-btn" title="Síň slávy">
+          🏆
+        </button>
+        <!-- Rules / Help Toggle -->
+        <button id="help-toggle-btn" class="icon-btn" title="Nápověda">
+          ❓
+        </button>
+      </div>
+    </header>
+
+    <!-- Lobby Screen (active by default) -->
+    <div id="lobby-screen" class="screen active">
+      <div class="lobby-columns">
+        <!-- Settings Panel -->
+        <div class="lobby-settings-panel">
+          <div class="lobby-panel-title">NASTAVENÍ ARÉNY</div>
+          
+          <!-- Map Selection -->
+          <div class="setting-row">
+            <label>TYP MAPY (ARÉNY)</label>
+            <div class="btn-group" id="map-select-group">
+              <button class="btn-option active" data-value="classic">KLASICKÁ</button>
+              <button class="btn-option" data-value="box">KRABICE</button>
+              <button class="btn-option" data-value="maze">BLUDIŠTĚ</button>
+              <button class="btn-option" data-value="custom">VLASTNÍ</button>
+            </div>
+            <button id="open-editor-btn" class="btn-secondary" style="font-size: 0.75rem; padding: 5px 10px; margin-top: 5px; width: 100%;">✏️ EDITOVAT VLASTNÍ MAPU</button>
+          </div>
+          
+          <!-- Borders wraps behavior -->
+          <div class="setting-row">
+            <label>OKRAJE MAPY</label>
+            <div class="btn-group" id="borders-select-group">
+              <button class="btn-option active" data-value="wrap">PROCHÁZECÍ</button>
+              <button class="btn-option" data-value="solid">SMRTÍCÍ</button>
+            </div>
+          </div>
+          
+          <!-- Game Speed -->
+          <div class="setting-row">
+            <label>RYCHLOST HRY</label>
+            <div class="btn-group" id="speed-select-group">
+              <button class="btn-option" data-value="slow">POMALÁ</button>
+              <button class="btn-option active" data-value="normal">STŘEDNÍ</button>
+              <button class="btn-option" data-value="fast">RYCHLÁ</button>
+            </div>
+          </div>
+          
+          <!-- AI Difficulty -->
+          <div class="setting-row">
+            <label>OBTÍŽNOST AI BOTŮ</label>
+            <div class="btn-group" id="ai-diff-select-group">
+              <button class="btn-option" data-value="easy">SNADNÁ</button>
+              <button class="btn-option active" data-value="medium">STŘEDNÍ</button>
+              <button class="btn-option" data-value="hard">TĚŽKÁ</button>
+            </div>
+          </div>
+          
+          <!-- Graphics Style Selector -->
+          <div class="setting-row">
+            <label>STYL GRAFIKY</label>
+            <div class="btn-group" id="theme-select-group">
+              <button class="btn-option active" data-value="neon">NEONOVÝ CYBER</button>
+              <button class="btn-option" data-value="retro">RETRO PIXEL</button>
+            </div>
+          </div>
+          
+          <!-- Portals Option -->
+          <div class="setting-row">
+            <label>PORTÁLY V ARÉNĚ</label>
+            <div class="btn-group" id="portals-select-group">
+              <button class="btn-option active" data-value="false">VYPNUTO</button>
+              <button class="btn-option" data-value="true">ZAPNUTO</button>
+            </div>
+          </div>
+          
+          <!-- Power-ups Legend -->
+          <div class="legend-panel">
+            <div class="legend-title">Energetické body (Ovoce)</div>
+            <div class="legend-items">
+              <div class="legend-item">
+                <span class="legend-color" style="background-color: var(--neon-red);"></span>
+                <span>Jablko (+1)</span>
+              </div>
+              <div class="legend-item">
+                <span class="legend-color" style="background-color: var(--neon-yellow);"></span>
+                <span>Zlaté (+2 & Boost)</span>
+              </div>
+              <div class="legend-item">
+                <span class="legend-color" style="background-color: var(--neon-orange);"></span>
+                <span>Chili (Speed up)</span>
+              </div>
+              <div class="legend-item">
+                <span class="legend-color" style="background-color: var(--neon-blue);"></span>
+                <span>Borůvka (Slow down)</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Players Setup Panel -->
+        <div class="lobby-players-panel">
+          <div class="lobby-panel-title">PŘÍPRAVA HRAČŮ (AŽ 8)</div>
+          
+          <!-- Grid of player cards. Dynamically managed in game.js, but pre-seeded for standard look -->
+          <div class="players-grid" id="lobby-players-grid">
+            <!-- Player cards will be rendered dynamically by JavaScript -->
+          </div>
+        </div>
+      </div>
+      
+      <!-- Lobby Actions -->
+      <div class="lobby-actions">
+        <button id="start-game-btn" class="btn-primary">SPUSTIT BITVU</button>
+      </div>
+    </div>
+
+    <!-- Play Screen -->
+    <div id="play-screen" class="screen">
+      <div class="game-layout">
+        <!-- Left: Game Canvas Area -->
+        <div class="canvas-container" id="canvas-container">
+          <canvas id="game-canvas" width="800" height="800"></canvas>
+          
+          <!-- Pause Overlay -->
+          <div id="pause-overlay" class="game-overlay">
+            <div class="overlay-title">PAUZA</div>
+            <div class="overlay-subtitle">Stiskněte ESC nebo mezerník pro pokračování</div>
+            <div class="overlay-buttons">
+              <button id="resume-game-btn" class="btn-primary">POKRAČOVAT</button>
+              <button id="abort-game-btn" class="btn-secondary">UKONČIT BITVU</button>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Right: In-game Leaderboard / Scoreboard -->
+        <div class="scoreboard-panel">
+          <div class="lobby-panel-title" style="margin-bottom: 10px;">STAV BITVY</div>
+          
+          <div class="score-items" id="score-items-container">
+            <!-- Score cards will be rendered dynamically by JavaScript -->
+          </div>
+          
+          <!-- Mini Help tooltip in play screen -->
+          <div style="font-size: 0.75rem; color: var(--text-secondary); text-align: center; margin-top: 10px;">
+            Stiskněte <strong>Mezerník</strong> nebo <strong>ESC</strong> pro pauzu.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Game Over Screen -->
+    <div id="gameover-screen" class="screen">
+      <div class="winner-banner">
+        <div class="winner-title">KONEC BITVY</div>
+        <div class="winner-name" id="winner-announcement">Vítězí: Hráč 1!</div>
+      </div>
+      
+      <div class="leaderboard-table-container">
+        <div class="leaderboard-title">KONEČNÉ POŘADÍ</div>
+        <div class="leaderboard-list" id="gameover-leaderboard-list">
+          <!-- Dynamically populated rows -->
+        </div>
+      </div>
+      
+      <div style="display: flex; gap: 20px;">
+        <button id="restart-game-btn" class="btn-primary">HRÁT ZNOVU</button>
+        <button id="return-lobby-btn" class="btn-secondary">ZPĚT DO LOBBY</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Help Modal Overlay -->
+  <div id="help-modal" class="game-overlay" style="z-index: 100;">
+    <div class="lobby-settings-panel" style="max-width: 600px; width: 90%; max-height: 80%; text-align: left; padding: 25px;">
+      <div class="lobby-panel-title" style="text-align: center;">JAK HRÁT</div>
+      <div style="font-size: 0.95rem; line-height: 1.6; display: flex; flex-direction: column; gap: 12px; color: var(--text-primary); overflow-y: auto;">
+        <p><strong>Cíl hry:</strong> Přežijte nejdéle v neonové aréně! Vyhýbejte se zdem, vlastním tělům a tělům soupeřů. Sbírejte energetické body (ovoce) pro růst a získávání bodů.</p>
+        
+        <p><strong>Ovládání:</strong> Každý had se pohybuje vpřed automaticky. K řízení používáte <strong>pouze dvě klávesy</strong>:</p>
+        <ul style="margin-left: 20px; display: flex; flex-direction: column; gap: 4px;">
+          <li><strong>Tlačítko Doleva:</strong> Otočí hada o 90° vlevo vzhledem k jeho aktuálnímu pohledu.</li>
+          <li><strong>Tlačítko Doprava:</strong> Otočí hada o 90° vpravo vzhledem k jeho aktuálnímu pohledu.</li>
+        </ul>
+        
+        <p><strong>Nastavení v Lobby:</strong> V lobby můžete aktivovat až 8 hráčů. Každý hráč může být ovládán <strong>člověkem (Human)</strong>, <strong>počítačem (AI)</strong>, nebo být zcela <strong>vypnutý (Disabled)</strong>.</p>
+        
+        <p><strong>Přemapování kláves:</strong> V lobby klikněte na políčko klávesy u libovolného lidského hráče a stiskněte na klávesnici nové tlačítko pro přiřazení.</p>
+      </div>
+      <button id="close-help-btn" class="btn-primary" style="margin-top: 15px; width: 100%;">ROZUMÍM</button>
+    </div>
+  <!-- Hall of Fame Modal Overlay -->
+  <div id="fame-modal" class="game-overlay" style="z-index: 101;">
+    <div class="lobby-settings-panel" style="max-width: 650px; width: 90%; max-height: 80%; padding: 25px;">
+      <div class="lobby-panel-title" style="text-align: center;">🏆 SÍŇ SLÁVY (TOP 10)</div>
+      <div style="flex: 1; overflow-y: auto; width: 100%;">
+        <table class="fame-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Jméno</th>
+              <th>Skóre</th>
+              <th>Nastavení</th>
+              <th>Datum</th>
+            </tr>
+          </thead>
+          <tbody id="fame-list-body">
+            <!-- Dynamically populated -->
+          </tbody>
+        </table>
+      </div>
+      <div style="display: flex; gap: 15px; margin-top: 15px; width: 100%;">
+        <button id="clear-fame-btn" class="btn-secondary" style="flex: 1; color: var(--neon-red); border-color: rgba(255,0,60,0.3);">VYMAZAT SÍŇ</button>
+        <button id="close-fame-btn" class="btn-primary" style="flex: 1;">ZAVŘÍT</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Map Editor Modal Overlay -->
+  <div id="editor-modal" class="game-overlay" style="z-index: 102;">
+    <div class="lobby-settings-panel" style="max-width: 800px; width: 95%; max-height: 90%; padding: 25px;">
+      <div class="lobby-panel-title" style="text-align: center;">✏️ EDITOR VLASTNÍ MAPY</div>
+      <div class="editor-layout">
+        <!-- Left: Draw grid -->
+        <div class="editor-canvas-container">
+          <canvas id="editor-canvas" width="500" height="500"></canvas>
+        </div>
+        <!-- Right: Tools -->
+        <div class="editor-controls">
+          <div style="display: flex; flex-direction: column; gap: 15px;">
+            <div class="tool-select">
+              <label style="font-weight: 600; font-size: 0.85rem; color: var(--text-secondary);">NÁSTROJ</label>
+              <div class="btn-group" id="editor-tool-group">
+                <button class="btn-option active" data-tool="draw">KRESLIT</button>
+                <button class="btn-option" data-tool="erase">MAZAT</button>
+              </div>
+            </div>
+            
+            <div class="editor-instructions">
+              <strong>Návod:</strong><br>
+              Kliknutím nebo tažením myši po mřížce pokládejte/mažte překážky. <br><br>
+              Zelené spawn body hráčů a ovoce nelze zastavět – ty se při spuštění hry automaticky vynechají.
+            </div>
+          </div>
+          
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <button id="clear-editor-btn" class="btn-secondary">VYČISTIT MAPU</button>
+            <button id="save-editor-btn" class="btn-primary" style="width: 100%;">ULOŽIT MAPU</button>
+            <button id="close-editor-btn" class="btn-secondary" style="width: 100%;">ZAVŘÍT</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="game.js"></script>
+</body>
+</html>
