@@ -893,6 +893,22 @@ const Game = {
         return;
       }
       
+      // 1.5. Start/Restart game from Lobby or Game Over using Space or Enter
+      if (this.state === 'LOBBY' && (e.code === 'Space' || e.code === 'Enter')) {
+        const activeEl = document.activeElement;
+        const isTyping = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA');
+        if (!isTyping) {
+          e.preventDefault();
+          this.initGame();
+          return;
+        }
+      }
+      if (this.state === 'GAME_OVER' && (e.code === 'Space' || e.code === 'Enter')) {
+        e.preventDefault();
+        this.initGame();
+        return;
+      }
+      
       // 2. Pause toggle
       if ((e.code === 'Space' || e.code === 'Escape') && this.state === 'PLAYING') {
         e.preventDefault();
