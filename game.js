@@ -35,10 +35,12 @@ const SPAWN_POINTS = [
 
 // Fruit Types with their properties
 const FRUIT_TYPES = {
-  NORMAL: { type: 'NORMAL', color: '#ff003c', shadow: '#ff003c', grow: 1, points: 10, prob: 0.7 },
-  GOLDEN: { type: 'GOLDEN', color: '#ffe600', shadow: '#ffe600', grow: 2, points: 30, prob: 0.1, effect: 'boost', duration: 4000 },
-  CHILI:  { type: 'CHILI',  color: '#ff6c00', shadow: '#ff6c00', grow: 1, points: 15, prob: 0.1, effect: 'boost', duration: 5000 },
-  BERRY:  { type: 'BERRY',  color: '#0066ff', shadow: '#0066ff', grow: 1, points: 5,  prob: 0.1, effect: 'slow',  duration: 6000 }
+  NORMAL:   { type: 'NORMAL',   color: '#ff003c', shadow: '#ff003c', grow: 1, points: 10, prob: 0.55 },
+  GOLDEN:   { type: 'GOLDEN',   color: '#ffe600', shadow: '#ffe600', grow: 2, points: 30, prob: 0.15, effect: 'boost', duration: 4000 },
+  CHILI:    { type: 'CHILI',    color: '#ff6c00', shadow: '#ff6c00', grow: 1, points: 15, prob: 0.10, effect: 'boost', duration: 5000 },
+  BERRY:    { type: 'BERRY',    color: '#0066ff', shadow: '#0066ff', grow: 1, points: 5,  prob: 0.10, effect: 'slow',  duration: 6000 },
+  MYSTERY:  { type: 'MYSTERY',  color: '#d500f9', shadow: '#d500f9', grow: 1, points: 15, prob: 0.06, effect: 'mystery', duration: 0 },
+  MUSHROOM: { type: 'MUSHROOM', color: '#ffd700', shadow: '#ffd700', grow: 2, points: 25, prob: 0.04, effect: 'gold_mushroom', duration: 8000 }
 };
 
 // ----------------------------------------------------
@@ -560,6 +562,39 @@ const Game = {
   
   updatePlayerName(idx, value) {
     this.lobbyPlayers[idx].name = value.trim() || null;
+  },
+  
+  getSegmentSidewaysOffsets(snake, index) {
+    const seg = snake.body[index];
+    let dx = 0, dy = 0;
+    
+    if (index === 0) {
+      const offset = DIRECTIONS[snake.dirIndex];
+      dx = offset.x;
+      dy = offset.y;
+    } else {
+      const prev = snake.body[index - 1];
+      dx = prev.x - seg.x;
+      dy = prev.y - seg.y;
+      
+      // Handle coordinate wrapping
+      if (dx > 1) dx = -1;
+      if (dx < -1) dx = 1;
+      if (dy > 1) dy = -1;
+      if (dy < -1) dy = 1;
+    }
+    
+    let sx = 0, sy = 0;
+    if (dx !== 0) {
+      sy = 1;
+    } else {
+      sx = 1;
+    }
+    
+    return [
+      { x: (seg.x - sx + GRID_SIZE) % GRID_SIZE, y: (seg.y - sy + GRID_SIZE) % GRID_SIZE },
+      { x: (seg.x + sx + GRID_SIZE) % GRID_SIZE, y: (seg.y + sy + GRID_SIZE) % GRID_SIZE }
+    ];
   },
   
   saveToHallOfFame(name, score) {
@@ -1176,12 +1211,16 @@ const Game = {
       // Deciding Fruit Type based on probability
       const r = Math.random();
       let type = FRUIT_TYPES.NORMAL;
-      if (r < 0.1) {
-        type = FRUIT_TYPES.GOLDEN;
-      } else if (r < 0.2) {
-        type = FRUIT_TYPES.CHILI;
-      } else if (r < 0.3) {
+      if (r < 0.04) {
+        type = FRUIT_TYPES.MUSHROOM;
+      } else if (r < 0.10) {
+        type = FRUIT_TYPES.MYSTERY;
+      } else if (r < 0.20) {
         type = FRUIT_TYPES.BERRY;
+      } else if (r < 0.30) {
+        type = FRUIT_TYPES.CHILI;
+      } else if (r < 0.45) {
+        type = FRUIT_TYPES.GOLDEN;
       }
       
       this.fruits.push({ x: fx, y: fy, ...type });
@@ -1305,8 +1344,14 @@ const Game = {
       nextY = (nextY + GRID_SIZE) % GRID_SIZE;
     } else {
       if (nextX < 0 || nextX >= GRID_SIZE || nextY < 0 || nextY >= GRID_SIZE) {
-        this.killSnake(snake, 'Náraz do okraje arény!');
-        return;
+        if (snake.activeEffect === 'gold_mushroom') {
+          // Wrap around temporarily for immortal snake to avoid drawing/logic bugs
+          nextX = (nextX + GRID_SIZE) % GRID_SIZE;
+          nextY = (nextY + GRID_SIZE) % GRID_SIZE;
+        } else {
+          this.killSnake(snake, 'Náraz do okraje arény!');
+          return;
+        }
       }
     }
     
@@ -1335,18 +1380,32 @@ const Game = {
     
     // Obstacle crash
     if (this.obstacles.has(`${nextX},${nextY}`)) {
-      this.killSnake(snake, 'Náraz do překážky!');
-      return;
+      if (snake.activeEffect !== 'gold_mushroom') {
+        this.killSnake(snake, 'Náraz do překážky!');
+        return;
+      }
     }
     
     // Other snake / self body crash
     for (let other of this.snakes) {
       if (!other.alive) continue;
       
-      for (let seg of other.body) {
-        if (seg.x === nextX && seg.y === nextY) {
-          this.killSnake(snake, `Kolize s tělem (${other.name})!`);
-          return;
+      const occupied = [];
+      other.body.forEach((seg, idx) => {
+        occupied.push({ x: seg.x, y: seg.y });
+        if (other.activeEffect === 'gold_mushroom') {
+          const offsets = this.getSegmentSidewaysOffsets(other, idx);
+          occupied.push(offsets[0]);
+          occupied.push(offsets[1]);
+        }
+      });
+      
+      for (let cell of occupied) {
+        if (cell.x === nextX && cell.y === nextY) {
+          if (snake.activeEffect !== 'gold_mushroom') {
+            this.killSnake(snake, `Kolize s tělem (${other.name})!`);
+            return;
+          }
         }
       }
     }
@@ -1382,8 +1441,29 @@ const Game = {
       
       // Apply power-up modifiers
       if (fruit.effect) {
-        snake.activeEffect = fruit.effect;
-        snake.effectTimer = fruit.duration;
+        if (fruit.effect === 'mystery') {
+          // Select a random fruit effect (except mystery itself)
+          const pool = [FRUIT_TYPES.NORMAL, FRUIT_TYPES.GOLDEN, FRUIT_TYPES.CHILI, FRUIT_TYPES.BERRY, FRUIT_TYPES.MUSHROOM];
+          const choice = pool[Math.floor(Math.random() * pool.length)];
+          
+          if (choice.type !== 'NORMAL') {
+            // Apply bonus points & growth
+            snake.score += choice.points;
+            const extra = choice.grow - 1;
+            for (let g = 0; g < extra; g++) {
+              const tail = snake.body[snake.body.length - 1];
+              snake.body.push({ x: tail.x, y: tail.y });
+            }
+          }
+          
+          if (choice.effect) {
+            snake.activeEffect = choice.effect;
+            snake.effectTimer = choice.duration;
+          }
+        } else {
+          snake.activeEffect = fruit.effect;
+          snake.effectTimer = fruit.duration;
+        }
       }
       
       // Sounds & explosion particles
@@ -1698,45 +1778,103 @@ const Game = {
       const py = fruit.y * CELL_SIZE;
       
       if (isRetro) {
-        // Draw 8-bit retro pixel apple
-        this.ctx.save();
-        // Red fruit body (blocky)
-        this.ctx.fillStyle = fruit.color;
-        this.ctx.fillRect(px + 4, py + 6, 12, 12);
-        this.ctx.fillRect(px + 6, py + 4, 8, 2);
-        this.ctx.fillRect(px + 6, py + 18, 8, 1);
-        
-        // White pixel shine
-        this.ctx.fillStyle = '#ffffff';
-        this.ctx.fillRect(px + 6, py + 6, 2, 2);
-        
-        // Brown wood stem
-        this.ctx.fillStyle = '#654321';
-        this.ctx.fillRect(px + 9, py + 1, 2, 3);
-        
-        // Green leaf
-        this.ctx.fillStyle = '#39ff14';
-        this.ctx.fillRect(px + 11, py + 2, 3, 2);
-        this.ctx.restore();
+        if (fruit.type === 'MYSTERY') {
+          // Draw pixel ? Box
+          this.ctx.save();
+          this.ctx.fillStyle = '#3c096c';
+          this.ctx.fillRect(px + 2, py + 2, CELL_SIZE - 4, CELL_SIZE - 4);
+          this.ctx.fillStyle = '#9d4edd';
+          this.ctx.fillRect(px + 4, py + 4, CELL_SIZE - 8, CELL_SIZE - 8);
+          
+          this.ctx.fillStyle = '#ffffff';
+          this.ctx.font = 'bold 10px monospace';
+          this.ctx.textAlign = 'center';
+          this.ctx.textBaseline = 'middle';
+          this.ctx.fillText('?', px + CELL_SIZE/2, py + CELL_SIZE/2);
+          this.ctx.restore();
+        } else if (fruit.type === 'MUSHROOM') {
+          // Draw pixel gold mushroom
+          this.ctx.save();
+          this.ctx.fillStyle = '#e0aaff'; // stem
+          this.ctx.fillRect(px + 8, py + 10, 4, 8);
+          this.ctx.fillStyle = '#ffd700'; // cap
+          this.ctx.fillRect(px + 3, py + 4, 14, 6);
+          this.ctx.fillStyle = '#fff3b0'; // highlight
+          this.ctx.fillRect(px + 6, py + 5, 2, 2);
+          this.ctx.fillRect(px + 12, py + 6, 2, 2);
+          this.ctx.restore();
+        } else {
+          // Draw 8-bit retro pixel apple
+          this.ctx.save();
+          this.ctx.fillStyle = fruit.color;
+          this.ctx.fillRect(px + 4, py + 6, 12, 12);
+          this.ctx.fillRect(px + 6, py + 4, 8, 2);
+          this.ctx.fillRect(px + 6, py + 18, 8, 1);
+          
+          this.ctx.fillStyle = '#ffffff';
+          this.ctx.fillRect(px + 6, py + 6, 2, 2);
+          
+          this.ctx.fillStyle = '#654321';
+          this.ctx.fillRect(px + 9, py + 1, 2, 3);
+          
+          this.ctx.fillStyle = '#39ff14';
+          this.ctx.fillRect(px + 11, py + 2, 3, 2);
+          this.ctx.restore();
+        }
       } else {
-        this.ctx.save();
-        this.ctx.shadowBlur = 15;
-        this.ctx.shadowColor = fruit.shadow;
-        this.ctx.fillStyle = fruit.color;
-        
-        const cx = px + CELL_SIZE / 2;
-        const cy = py + CELL_SIZE / 2;
-        
-        this.ctx.beginPath();
-        this.ctx.arc(cx, cy, CELL_SIZE / 2 - 2, 0, Math.PI * 2);
-        this.ctx.fill();
-        
-        // Draw shiny core
-        this.ctx.fillStyle = '#ffffff';
-        this.ctx.beginPath();
-        this.ctx.arc(cx - 2, cy - 2, 2, 0, Math.PI * 2);
-        this.ctx.fill();
-        this.ctx.restore();
+        if (fruit.type === 'MYSTERY') {
+          // Neon ? Box
+          this.ctx.save();
+          this.ctx.fillStyle = '#0f0c1b';
+          this.ctx.strokeStyle = '#d500f9';
+          this.ctx.lineWidth = 2;
+          this.ctx.shadowColor = '#d500f9';
+          this.ctx.shadowBlur = 10;
+          this.ctx.fillRect(px + 2, py + 2, CELL_SIZE - 4, CELL_SIZE - 4);
+          this.ctx.strokeRect(px + 2, py + 2, CELL_SIZE - 4, CELL_SIZE - 4);
+          
+          this.ctx.fillStyle = '#ffffff';
+          this.ctx.font = 'bold 12px sans-serif';
+          this.ctx.textAlign = 'center';
+          this.ctx.textBaseline = 'middle';
+          this.ctx.shadowBlur = 0;
+          this.ctx.fillText('?', px + CELL_SIZE/2, py + CELL_SIZE/2);
+          this.ctx.restore();
+        } else if (fruit.type === 'MUSHROOM') {
+          // Neon gold mushroom
+          this.ctx.save();
+          this.ctx.shadowColor = '#ffd700';
+          this.ctx.shadowBlur = 12;
+          
+          // Cap
+          this.ctx.fillStyle = '#ffd700';
+          this.ctx.beginPath();
+          this.ctx.arc(px + CELL_SIZE/2, py + CELL_SIZE/2 - 2, CELL_SIZE/2 - 1, Math.PI, 0);
+          this.ctx.fill();
+          
+          // Stem
+          this.ctx.fillStyle = '#ffffff';
+          this.ctx.fillRect(px + CELL_SIZE/2 - 2, py + CELL_SIZE/2 - 2, 4, CELL_SIZE/2 - 1);
+          this.ctx.restore();
+        } else {
+          this.ctx.save();
+          this.ctx.shadowBlur = 15;
+          this.ctx.shadowColor = fruit.shadow;
+          this.ctx.fillStyle = fruit.color;
+          
+          const cx = px + CELL_SIZE / 2;
+          const cy = py + CELL_SIZE / 2;
+          
+          this.ctx.beginPath();
+          this.ctx.arc(cx, cy, CELL_SIZE / 2 - 2, 0, Math.PI * 2);
+          this.ctx.fill();
+          
+          this.ctx.fillStyle = '#ffffff';
+          this.ctx.beginPath();
+          this.ctx.arc(cx - 2, cy - 2, 2, 0, Math.PI * 2);
+          this.ctx.fill();
+          this.ctx.restore();
+        }
       }
     });
     
@@ -1755,19 +1893,32 @@ const Game = {
           const isHead = idx === 0;
           
           this.ctx.save();
-          // Draw body block
-          this.ctx.fillStyle = snake.color;
           let offset = 1;
           if (snake.activeEffect === 'boost') offset = 0;
           if (snake.activeEffect === 'slow') offset = 2;
           
-          this.ctx.fillRect(px + offset, py + offset, CELL_SIZE - offset * 2, CELL_SIZE - offset * 2);
+          // Draw helper for a single 8-bit block
+          const drawBlock = (bx, by) => {
+            this.ctx.fillStyle = snake.color;
+            this.ctx.fillRect(bx + offset, by + offset, CELL_SIZE - offset * 2, CELL_SIZE - offset * 2);
+            
+            // Add scale textures
+            this.ctx.fillStyle = 'rgba(255, 255, 255, 0.25)'; // Highlight
+            this.ctx.fillRect(bx + offset + 2, by + offset + 2, 4, 4);
+            this.ctx.fillStyle = 'rgba(0, 0, 0, 0.25)'; // Shadow
+            this.ctx.fillRect(bx + CELL_SIZE - offset - 6, by + CELL_SIZE - offset - 6, 4, 4);
+          };
           
-          // Add scale textures
-          this.ctx.fillStyle = 'rgba(255, 255, 255, 0.25)'; // Highlight
-          this.ctx.fillRect(px + offset + 2, py + offset + 2, 4, 4);
-          this.ctx.fillStyle = 'rgba(0, 0, 0, 0.25)'; // Shadow
-          this.ctx.fillRect(px + CELL_SIZE - offset - 6, py + CELL_SIZE - offset - 6, 4, 4);
+          if (snake.activeEffect === 'gold_mushroom') {
+            // Draw 3 blocks wide!
+            drawBlock(px, py);
+            const sideOffsets = this.getSegmentSidewaysOffsets(snake, idx);
+            sideOffsets.forEach(off => {
+              drawBlock(off.x * CELL_SIZE, off.y * CELL_SIZE);
+            });
+          } else {
+            drawBlock(px, py);
+          }
           
           if (isHead) {
             // Draw eyes based on head orientation
@@ -1805,10 +1956,12 @@ const Game = {
         this.ctx.lineCap = 'round';
         this.ctx.lineJoin = 'round';
         
-        // Apply thicker line for speed boost
+        // Apply thicker line for speed boost / mushroom fatness
         this.ctx.lineWidth = snake.activeEffect === 'boost' ? CELL_SIZE - 2 : CELL_SIZE - 4;
         if (snake.activeEffect === 'slow') {
           this.ctx.lineWidth = CELL_SIZE - 6;
+        } else if (snake.activeEffect === 'gold_mushroom') {
+          this.ctx.lineWidth = CELL_SIZE * 2.8; // 3 cells wide!
         }
         
         // Draw body path
@@ -1842,21 +1995,29 @@ const Game = {
         this.ctx.shadowBlur = 18;
         this.ctx.shadowColor = snake.color;
         this.ctx.fillStyle = '#ffffff';
+        
+        let headRadius = CELL_SIZE / 2 - 1;
+        let eyeScale = 1;
+        if (snake.activeEffect === 'gold_mushroom') {
+          headRadius = CELL_SIZE * 1.3;
+          eyeScale = 2.2;
+        }
+        
         this.ctx.beginPath();
-        this.ctx.arc(hx, hy, CELL_SIZE / 2 - 1, 0, Math.PI * 2);
+        this.ctx.arc(hx, hy, headRadius, 0, Math.PI * 2);
         this.ctx.fill();
         
         this.ctx.fillStyle = snake.color;
         this.ctx.beginPath();
         
         const offset = DIRECTIONS[snake.dirIndex];
-        const eyeOffset = CELL_SIZE / 4;
+        const eyeOffset = (CELL_SIZE / 4) * eyeScale;
         if (offset.x !== 0) {
-          this.ctx.arc(hx + offset.x * 2, hy - eyeOffset, 2, 0, Math.PI * 2);
-          this.ctx.arc(hx + offset.x * 2, hy + eyeOffset, 2, 0, Math.PI * 2);
+          this.ctx.arc(hx + offset.x * 2 * eyeScale, hy - eyeOffset, 2 * eyeScale, 0, Math.PI * 2);
+          this.ctx.arc(hx + offset.x * 2 * eyeScale, hy + eyeOffset, 2 * eyeScale, 0, Math.PI * 2);
         } else {
-          this.ctx.arc(hx - eyeOffset, hy + offset.y * 2, 2, 0, Math.PI * 2);
-          this.ctx.arc(hx + eyeOffset, hy + offset.y * 2, 2, 0, Math.PI * 2);
+          this.ctx.arc(hx - eyeOffset, hy + offset.y * 2 * eyeScale, 2 * eyeScale, 0, Math.PI * 2);
+          this.ctx.arc(hx + eyeOffset, hy + offset.y * 2 * eyeScale, 2 * eyeScale, 0, Math.PI * 2);
         }
         this.ctx.fill();
         this.ctx.restore();
