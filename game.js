@@ -1778,9 +1778,22 @@ const Game = {
   // ----------------------------------------------------
   draw() {
     const isRetro = this.graphicsTheme === 'retro';
+    const isTrain = this.graphicsTheme === 'train';
     
     // 1. Draw Background
-    if (isRetro) {
+    if (isTrain) {
+      // Checkered OpenTTD grass fields
+      this.ctx.fillStyle = '#63984c'; // Dark grass
+      this.ctx.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
+      this.ctx.fillStyle = '#6fa83c'; // Light grass
+      for (let x = 0; x < GRID_SIZE; x++) {
+        for (let y = 0; y < GRID_SIZE; y++) {
+          if ((x + y) % 2 === 0) {
+            this.ctx.fillRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+          }
+        }
+      }
+    } else if (isRetro) {
       // Dark forest grass/mud color
       this.ctx.fillStyle = '#182b1c';
       this.ctx.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
@@ -1829,7 +1842,14 @@ const Game = {
     
     // 2. Draw map outline
     if (!this.bordersWrap) {
-      if (isRetro) {
+      if (isTrain) {
+        // Red brick retaining border wall
+        this.ctx.fillStyle = '#7a2920';
+        this.ctx.fillRect(0, 0, CANVAS_SIZE, 6);
+        this.ctx.fillRect(0, CANVAS_SIZE - 6, CANVAS_SIZE, 6);
+        this.ctx.fillRect(0, 0, 6, CANVAS_SIZE);
+        this.ctx.fillRect(CANVAS_SIZE - 6, 0, 6, CANVAS_SIZE);
+      } else if (isRetro) {
         // Brown wooden fence border
         this.ctx.fillStyle = '#834c24'; // Wood brown
         this.ctx.fillRect(0, 0, CANVAS_SIZE, 6);
@@ -1844,7 +1864,12 @@ const Game = {
     } else {
       // Draw thin wrapping borders indicator
       this.ctx.save();
-      if (isRetro) {
+      if (isTrain) {
+        this.ctx.strokeStyle = 'rgba(99, 152, 76, 0.5)';
+        this.ctx.lineWidth = 2;
+        this.ctx.setLineDash([6, 6]);
+        this.ctx.strokeRect(2, 2, CANVAS_SIZE - 4, CANVAS_SIZE - 4);
+      } else if (isRetro) {
         this.ctx.strokeStyle = 'rgba(45, 90, 39, 0.4)';
         this.ctx.lineWidth = 2;
         this.ctx.setLineDash([5, 5]);
@@ -1866,7 +1891,19 @@ const Game = {
       const px = ox * CELL_SIZE;
       const py = oy * CELL_SIZE;
       
-      if (isRetro) {
+      if (isTrain) {
+        // OpenTTD red brick building / depot
+        this.ctx.save();
+        this.ctx.fillStyle = '#9b382d'; // Red brick
+        this.ctx.fillRect(px + 2, py + 6, CELL_SIZE - 4, CELL_SIZE - 6);
+        this.ctx.fillStyle = '#1c1c1c'; // Dark arch door
+        this.ctx.fillRect(px + 6, py + 10, CELL_SIZE - 12, CELL_SIZE - 10);
+        this.ctx.fillStyle = '#5a5a5a'; // Roof grey
+        this.ctx.fillRect(px + 1, py + 2, CELL_SIZE - 2, 4);
+        this.ctx.fillStyle = '#8e8e8e'; // Roof highlights
+        this.ctx.fillRect(px + 3, py + 1, CELL_SIZE - 6, 2);
+        this.ctx.restore();
+      } else if (isRetro) {
         // Draw pixel-art tree block
         this.ctx.save();
         // Trunk / Stump base
@@ -1904,7 +1941,31 @@ const Game = {
       const pbY = 20 * CELL_SIZE + CELL_SIZE / 2;
       const portalTime = performance.now() * 0.005;
       
-      if (isRetro) {
+      if (isTrain) {
+        this.ctx.save();
+        const drawTunnel = (tx, ty, signalColor) => {
+          const tpx = tx * CELL_SIZE;
+          const tpy = ty * CELL_SIZE;
+          
+          // Stone tunnel arch
+          this.ctx.fillStyle = '#5e5e5e';
+          this.ctx.fillRect(tpx + 2, tpy + 2, CELL_SIZE - 4, CELL_SIZE - 2);
+          this.ctx.fillStyle = '#000000'; // Dark interior
+          this.ctx.beginPath();
+          this.ctx.arc(tpx + CELL_SIZE/2, tpy + CELL_SIZE, CELL_SIZE/2 - 3, Math.PI, 0);
+          this.ctx.fill();
+          
+          // Flashing signal light at top of tunnel
+          const flash = Math.floor(performance.now() / 300) % 2 === 0;
+          this.ctx.fillStyle = flash ? signalColor : '#222222';
+          this.ctx.beginPath();
+          this.ctx.arc(tpx + CELL_SIZE/2, tpy + 4, 2.5, 0, Math.PI * 2);
+          this.ctx.fill();
+        };
+        drawTunnel(10, 20, '#00f2fe'); // Tunnel A
+        drawTunnel(30, 20, '#ff6c00'); // Tunnel B
+        this.ctx.restore();
+      } else if (isRetro) {
         this.ctx.save();
         // Portal A (Cyan)
         this.ctx.fillStyle = '#0066ff';
@@ -1950,7 +2011,22 @@ const Game = {
       const cy = py + CELL_SIZE / 2;
       const pulse = Math.sin(performance.now() * 0.01) * 2;
       
-      if (isRetro) {
+      if (isTrain) {
+        this.ctx.save();
+        // Track buffer stop barrier
+        this.ctx.fillStyle = '#4a2e1b'; // Wooden pillars
+        this.ctx.fillRect(px + 4, py + 4, 3, 12);
+        this.ctx.fillRect(px + 13, py + 4, 3, 12);
+        
+        this.ctx.fillStyle = '#ff2200'; // Red buffer plate
+        this.ctx.fillRect(px + 2, py + 6, CELL_SIZE - 4, 4);
+        
+        // Flashing hazard stripe
+        const flash = Math.floor(performance.now() / 250) % 2 === 0;
+        this.ctx.fillStyle = flash ? '#ffd700' : '#111';
+        this.ctx.fillRect(px + 8, py + 6, 4, 4);
+        this.ctx.restore();
+      } else if (isRetro) {
         this.ctx.save();
         // 8-bit black sea mine with flashing red spikes
         this.ctx.fillStyle = '#1c1c1c';
@@ -2005,7 +2081,76 @@ const Game = {
       const px = fruit.x * CELL_SIZE;
       const py = fruit.y * CELL_SIZE;
       
-      if (isRetro) {
+      if (isTrain) {
+        if (fruit.type === 'NORMAL') {
+          // Passenger suitcase
+          this.ctx.save();
+          this.ctx.fillStyle = '#8b5a2b'; // brown leather
+          this.ctx.fillRect(px + 4, py + 6, 12, 10);
+          this.ctx.fillStyle = '#5c3a21'; // handle
+          this.ctx.fillRect(px + 8, py + 3, 4, 3);
+          this.ctx.fillStyle = '#ffd700'; // brass buckles
+          this.ctx.fillRect(px + 6, py + 8, 2, 2);
+          this.ctx.fillRect(px + 12, py + 8, 2, 2);
+          this.ctx.restore();
+        } else if (fruit.type === 'GOLDEN') {
+          // Gold bullion chest
+          this.ctx.save();
+          this.ctx.fillStyle = '#ffd700'; // gold
+          this.ctx.fillRect(px + 4, py + 4, 12, 12);
+          this.ctx.fillStyle = '#b8860b'; // dark stripes
+          this.ctx.fillRect(px + 4, py + 8, 12, 2);
+          this.ctx.fillRect(px + 8, py + 4, 2, 12);
+          this.ctx.restore();
+        } else if (fruit.type === 'CHILI') {
+          // Mail bag
+          this.ctx.save();
+          this.ctx.fillStyle = '#9b382d'; // red bag
+          this.ctx.fillRect(px + 5, py + 5, 10, 11);
+          this.ctx.fillStyle = '#ffffff'; // white stripe
+          this.ctx.fillRect(px + 5, py + 8, 10, 2);
+          this.ctx.fillStyle = '#0055a5'; // blue tie ribbon
+          this.ctx.fillRect(px + 8, py + 3, 4, 3);
+          this.ctx.restore();
+        } else if (fruit.type === 'BERRY') {
+          // Oil steel barrel
+          this.ctx.save();
+          this.ctx.fillStyle = '#0055a5'; // blue barrel
+          this.ctx.fillRect(px + 5, py + 4, 10, 12);
+          this.ctx.fillStyle = '#003c75'; // ribs
+          this.ctx.fillRect(px + 4, py + 7, 12, 2);
+          this.ctx.fillRect(px + 4, py + 11, 12, 2);
+          this.ctx.restore();
+        } else if (fruit.type === 'MYSTERY') {
+          // Wooden cargo crate
+          this.ctx.save();
+          this.ctx.fillStyle = '#cd853f'; // wood tan
+          this.ctx.fillRect(px + 3, py + 3, 14, 14);
+          this.ctx.strokeStyle = '#8b5a2b';
+          this.ctx.lineWidth = 1;
+          this.ctx.strokeRect(px + 4, py + 4, 12, 12);
+          this.ctx.beginPath();
+          this.ctx.moveTo(px + 4, py + 4);
+          this.ctx.lineTo(px + 16, py + 16);
+          this.ctx.stroke();
+          
+          this.ctx.fillStyle = '#ffffff';
+          this.ctx.font = 'bold 8px monospace';
+          this.ctx.textAlign = 'center';
+          this.ctx.textBaseline = 'middle';
+          this.ctx.fillText('?', px + CELL_SIZE/2, py + CELL_SIZE/2);
+          this.ctx.restore();
+        } else if (fruit.type === 'MUSHROOM') {
+          // Golden train whistle
+          this.ctx.save();
+          this.ctx.fillStyle = '#ffd700'; // shiny brass
+          this.ctx.fillRect(px + 6, py + 4, 8, 12);
+          this.ctx.fillRect(px + 4, py + 6, 12, 2);
+          this.ctx.fillStyle = '#ffaa00';
+          this.ctx.fillRect(px + 8, py + 2, 4, 2);
+          this.ctx.restore();
+        }
+      } else if (isRetro) {
         if (fruit.type === 'MYSTERY') {
           // Draw pixel ? Box
           this.ctx.save();
@@ -2113,7 +2258,125 @@ const Game = {
     this.snakes.forEach(snake => {
       if (!snake.alive || snake.body.length === 0) return;
       
-      if (isRetro) {
+      if (isTrain) {
+        // Draw OpenTTD train cars
+        snake.body.forEach((seg, idx) => {
+          const px = seg.x * CELL_SIZE;
+          const py = seg.y * CELL_SIZE;
+          const isHead = idx === 0;
+          
+          this.ctx.save();
+          
+          const drawWagon = (bx, by) => {
+            this.ctx.fillStyle = snake.color;
+            // Wagon chassis base
+            this.ctx.fillRect(bx + 2, by + 4, CELL_SIZE - 4, CELL_SIZE - 8);
+            
+            // Wheels
+            this.ctx.fillStyle = '#222222';
+            this.ctx.fillRect(bx + 3, by + CELL_SIZE - 4, 3, 3);
+            this.ctx.fillRect(bx + CELL_SIZE - 6, by + CELL_SIZE - 4, 3, 3);
+            this.ctx.fillRect(bx + 3, by + 1, 3, 3);
+            this.ctx.fillRect(bx + CELL_SIZE - 6, by + 1, 3, 3);
+            
+            // Container cargo hole
+            this.ctx.fillStyle = '#0f0f0f';
+            this.ctx.fillRect(bx + 4, by + 5, CELL_SIZE - 8, CELL_SIZE - 10);
+            
+            // Cargo textures
+            if (idx % 3 === 1) {
+              // Coal pile
+              this.ctx.fillStyle = '#222222';
+              this.ctx.fillRect(bx + 6, by + 7, 8, 6);
+              this.ctx.fillStyle = '#444444';
+              this.ctx.fillRect(bx + 7, by + 8, 3, 3);
+            } else if (idx % 3 === 2) {
+              // Timber/wood logs
+              this.ctx.fillStyle = '#8b5a2b';
+              this.ctx.fillRect(bx + 5, by + 6, 10, 3);
+              this.ctx.fillRect(bx + 5, by + 10, 10, 3);
+              this.ctx.fillStyle = '#cdaf95';
+              this.ctx.fillRect(bx + 5, by + 6, 2, 3);
+              this.ctx.fillRect(bx + 5, by + 10, 2, 3);
+            } else {
+              // Gold bullion cargo
+              this.ctx.fillStyle = '#ffd700';
+              this.ctx.fillRect(bx + 6, by + 7, 3, 5);
+              this.ctx.fillRect(bx + 11, by + 7, 3, 5);
+            }
+          };
+          
+          const drawLocomotive = (bx, by) => {
+            this.ctx.fillStyle = snake.color;
+            this.ctx.fillRect(bx + 2, by + 2, CELL_SIZE - 4, CELL_SIZE - 4);
+            
+            const dir = snake.dirIndex;
+            let headlights = [];
+            let windows = [];
+            let grill = [];
+            
+            if (dir === 0) { // Up
+              headlights = [{x: bx + 4, y: by + 2, w: 2, h: 2}, {x: bx + 14, y: by + 2, w: 2, h: 2}];
+              windows = [{x: bx + 4, y: by + 12, w: 12, h: 4}];
+              grill = [{x: bx + 7, y: by + 4, w: 6, h: 2}];
+            } else if (dir === 1) { // Right
+              headlights = [{x: bx + CELL_SIZE - 4, y: by + 4, w: 2, h: 2}, {x: bx + CELL_SIZE - 4, y: by + 14, w: 2, h: 2}];
+              windows = [{x: bx + 4, y: by + 4, w: 4, h: 12}];
+              grill = [{x: bx + 10, y: by + 7, w: 2, h: 6}];
+            } else if (dir === 2) { // Down
+              headlights = [{x: bx + 4, y: by + CELL_SIZE - 4, w: 2, h: 2}, {x: bx + 14, y: by + CELL_SIZE - 4, w: 2, h: 2}];
+              windows = [{x: bx + 4, y: by + 4, w: 12, h: 4}];
+              grill = [{x: bx + 7, y: by + 14, w: 6, h: 2}];
+            } else { // Left
+              headlights = [{x: bx + 2, y: by + 4, w: 2, h: 2}, {x: bx + 2, y: by + 14, w: 2, h: 2}];
+              windows = [{x: bx + CELL_SIZE - 8, y: by + 4, w: 4, h: 12}];
+              grill = [{x: bx + 4, y: by + 7, w: 2, h: 6}];
+            }
+            
+            // Iron wheel hubs
+            this.ctx.fillStyle = '#222222';
+            this.ctx.fillRect(bx + 1, by + 4, 1, 4);
+            this.ctx.fillRect(bx + 1, by + 12, 1, 4);
+            this.ctx.fillRect(bx + CELL_SIZE - 2, by + 4, 1, 4);
+            this.ctx.fillRect(bx + CELL_SIZE - 2, by + 12, 1, 4);
+            
+            // Dark glass windows
+            this.ctx.fillStyle = '#111111';
+            windows.forEach(w => this.ctx.fillRect(w.x, w.y, w.w, w.h));
+            
+            // Yellow headlights glow
+            this.ctx.fillStyle = '#ffd700';
+            headlights.forEach(h => this.ctx.fillRect(h.x, h.y, h.w, h.h));
+            
+            // Radiator grill
+            this.ctx.fillStyle = '#777777';
+            grill.forEach(g => this.ctx.fillRect(g.x, g.y, g.w, g.h));
+          };
+          
+          if (isHead) {
+            if (snake.activeEffect === 'gold_mushroom') {
+              drawLocomotive(px, py);
+              const sideOffsets = this.getSegmentSidewaysOffsets(snake, idx);
+              sideOffsets.forEach(off => {
+                drawLocomotive(off.x * CELL_SIZE, off.y * CELL_SIZE);
+              });
+            } else {
+              drawLocomotive(px, py);
+            }
+          } else {
+            if (snake.activeEffect === 'gold_mushroom') {
+              drawWagon(px, py);
+              const sideOffsets = this.getSegmentSidewaysOffsets(snake, idx);
+              sideOffsets.forEach(off => {
+                drawWagon(off.x * CELL_SIZE, off.y * CELL_SIZE);
+              });
+            } else {
+              drawWagon(px, py);
+            }
+          }
+          this.ctx.restore();
+        });
+      } else if (isRetro) {
         // Draw 8-bit pixel snake (segmented block textures)
         snake.body.forEach((seg, idx) => {
           const px = seg.x * CELL_SIZE;
