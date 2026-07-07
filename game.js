@@ -1033,6 +1033,39 @@ const Game = {
     // GameOver control buttons
     document.getElementById('restart-game-btn').addEventListener('click', () => this.initGame());
     document.getElementById('return-lobby-btn').addEventListener('click', () => this.showScreen('lobby-screen'));
+    
+    // Touch controls for mobile steering (tap left/right half of game-canvas to turn first active human player)
+    const gameCanvas = document.getElementById('game-canvas');
+    const handleTouchTurn = (clientX) => {
+      if (this.state !== 'PLAYING') return;
+      
+      const rect = gameCanvas.getBoundingClientRect();
+      const relativeX = clientX - rect.left;
+      const pct = relativeX / rect.width;
+      
+      const p1 = this.snakes.find(s => !s.isBot && s.alive);
+      if (p1) {
+        if (pct < 0.5) {
+          p1.turnLeft();
+        } else {
+          p1.turnRight();
+        }
+      }
+    };
+    
+    gameCanvas.addEventListener('touchstart', (e) => {
+      if (e.touches.length > 0) {
+        handleTouchTurn(e.touches[0].clientX);
+        e.preventDefault(); // prevent zoom / scrolling on canvas
+      }
+    }, { passive: false });
+    
+    // Add mouse click fallback on game-canvas for testing mobile viewport on desktop
+    gameCanvas.addEventListener('mousedown', (e) => {
+      if (this.state === 'PLAYING') {
+        handleTouchTurn(e.clientX);
+      }
+    });
   },
   
   showScreen(screenId) {

@@ -1,6 +1,6 @@
-# 🎮 HAD // NEON_ARENA
+# 🎮 HADovka
 
-Moderní, plně přizpůsobitelná hra Had běžící přímo ve vašem webovém prohlížeči. Hra podporuje lokální hru pro až 8 hráčů na jedné klávesnici, inteligentní AI boty s volitelnou obtížností, dva odlišné grafické režimy (Cyber-Neon a Retro Lesní Pixel), integrovaný editor vlastních map, portály a přetrvávající Síň slávy!
+Moderní, plně přizpůsobitelná hra Had běžící přímo ve vašem webovém prohlížeči. Hra podporuje lokální hru pro až 8 hráčů na jedné klávesnici, dotykové ovládání na mobilních zařízeních, inteligentní AI boty s volitelnou obtížností, dva odlišné grafické režimy (Cyber-Neon a Retro Lesní Pixel), integrovaný editor vlastních map, portály a přetrvávající Síň slávy!
 
 👉 **[Zde si můžete hru zahrát online!](https://KarelBerka.github.io/hadovka/)** *(Po aktivaci GitHub Pages, viz návod níže)*
 
