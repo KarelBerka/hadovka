@@ -54,6 +54,18 @@ const SoundFX = {
       this.ctx = new (window.AudioContext || window.webkitAudioContext)();
     }
   },
+  createNoiseBufferNode() {
+    if (!this.ctx) return null;
+    const bufferSize = this.ctx.sampleRate * 1.0; // 1 second of noise
+    const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+      data[i] = Math.random() * 2 - 1;
+    }
+    const noise = this.ctx.createBufferSource();
+    noise.buffer = buffer;
+    return noise;
+  },
   play(type) {
     if (this.muted) return;
     this.init();
@@ -62,65 +74,204 @@ const SoundFX = {
     }
     
     const now = this.ctx.currentTime;
+    const theme = (window.Game && Game.graphicsTheme) || 'neon';
     
     switch(type) {
       case 'turn': {
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(350, now);
-        osc.frequency.exponentialRampToValueAtTime(700, now + 0.04);
-        gain.gain.setValueAtTime(0.04, now);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
-        osc.connect(gain);
-        gain.connect(this.ctx.destination);
-        osc.start(now);
-        osc.stop(now + 0.04);
+        if (theme === 'train') {
+          // Short steam whistle puff (A5 + C6 chord)
+          const osc1 = this.ctx.createOscillator();
+          const osc2 = this.ctx.createOscillator();
+          const gain1 = this.ctx.createGain();
+          const gain2 = this.ctx.createGain();
+          osc1.type = 'sawtooth';
+          osc2.type = 'sawtooth';
+          osc1.frequency.setValueAtTime(750, now);
+          osc2.frequency.setValueAtTime(880, now);
+          gain1.gain.setValueAtTime(0.012, now);
+          gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+          gain2.gain.setValueAtTime(0.012, now);
+          gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+          osc1.connect(gain1);
+          osc2.connect(gain2);
+          gain1.connect(this.ctx.destination);
+          gain2.connect(this.ctx.destination);
+          osc1.start(now);
+          osc2.start(now);
+          osc1.stop(now + 0.08);
+          osc2.stop(now + 0.08);
+        } else if (theme === 'retro') {
+          // Dry woodblock click (forest theme)
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(550, now);
+          osc.frequency.exponentialRampToValueAtTime(150, now + 0.04);
+          gain.gain.setValueAtTime(0.04, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.04);
+        } else {
+          // Cyber neon pitch sweep
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(350, now);
+          osc.frequency.exponentialRampToValueAtTime(750, now + 0.04);
+          gain.gain.setValueAtTime(0.04, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.04);
+        }
         break;
       }
       case 'eat': {
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(400, now);
-        osc.frequency.setValueAtTime(800, now + 0.08);
-        gain.gain.setValueAtTime(0.06, now);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
-        osc.connect(gain);
-        gain.connect(this.ctx.destination);
-        osc.start(now);
-        osc.stop(now + 0.2);
-        break;
-      }
-      case 'death': {
-        // Synthesise low rumble explosion
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
-        osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(140, now);
-        osc.frequency.linearRampToValueAtTime(20, now + 0.5);
-        
-        const filter = this.ctx.createBiquadFilter();
-        filter.type = 'lowpass';
-        filter.frequency.setValueAtTime(250, now);
-        
-        gain.gain.setValueAtTime(0.12, now);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
-        
-        osc.connect(filter);
-        filter.connect(gain);
-        gain.connect(this.ctx.destination);
-        
-        osc.start(now);
-        osc.stop(now + 0.5);
-        break;
-      }
-      case 'win': {
-        const notes = [261.63, 329.63, 392.00, 523.25, 659.25]; // C major pentatonic sweep
-        notes.forEach((freq, idx) => {
+        if (theme === 'train') {
+          // Train crossing bell "Clang!"
           const osc = this.ctx.createOscillator();
           const gain = this.ctx.createGain();
           osc.type = 'sine';
+          osc.frequency.setValueAtTime(987.77, now);
+          gain.gain.setValueAtTime(0.04, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.35);
+        } else if (theme === 'retro') {
+          // Retro forest pixel crunch bite
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(280, now);
+          osc.frequency.linearRampToValueAtTime(120, now + 0.05);
+          osc.frequency.linearRampToValueAtTime(380, now + 0.12);
+          gain.gain.setValueAtTime(0.05, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.15);
+        } else {
+          // Neon synth beep
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(440, now);
+          osc.frequency.setValueAtTime(880, now + 0.07);
+          gain.gain.setValueAtTime(0.05, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.18);
+        }
+        break;
+      }
+      case 'death':
+      case 'crash': {
+        if (theme === 'train') {
+          // Boiler crash + white noise steam hiss release
+          const osc = this.ctx.createOscillator();
+          const noiseNode = this.createNoiseBufferNode();
+          const gainOsc = this.ctx.createGain();
+          const gainNoise = this.ctx.createGain();
+          
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(160, now);
+          osc.frequency.linearRampToValueAtTime(25, now + 0.55);
+          gainOsc.gain.setValueAtTime(0.07, now);
+          gainOsc.gain.exponentialRampToValueAtTime(0.001, now + 0.55);
+          
+          if (noiseNode) {
+            const filter = this.ctx.createBiquadFilter();
+            filter.type = 'highpass';
+            filter.frequency.setValueAtTime(1000, now);
+            
+            noiseNode.connect(filter);
+            filter.connect(gainNoise);
+            gainNoise.gain.setValueAtTime(0.07, now);
+            gainNoise.gain.exponentialRampToValueAtTime(0.001, now + 0.7);
+            gainNoise.connect(this.ctx.destination);
+            noiseNode.start(now);
+            noiseNode.stop(now + 0.7);
+          }
+          
+          osc.connect(gainOsc);
+          gainOsc.connect(this.ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.55);
+        } else if (theme === 'retro') {
+          // Breaking branches + leaves rustling (noise bandpass filter)
+          const osc = this.ctx.createOscillator();
+          const noiseNode = this.createNoiseBufferNode();
+          const gainOsc = this.ctx.createGain();
+          const gainNoise = this.ctx.createGain();
+          
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(110, now);
+          osc.frequency.linearRampToValueAtTime(20, now + 0.4);
+          gainOsc.gain.setValueAtTime(0.08, now);
+          gainOsc.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+          
+          if (noiseNode) {
+            const filter = this.ctx.createBiquadFilter();
+            filter.type = 'bandpass';
+            filter.frequency.setValueAtTime(650, now);
+            filter.Q.setValueAtTime(1.5, now);
+            
+            noiseNode.connect(filter);
+            filter.connect(gainNoise);
+            gainNoise.gain.setValueAtTime(0.08, now);
+            gainNoise.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+            gainNoise.connect(this.ctx.destination);
+            noiseNode.start(now);
+            noiseNode.stop(now + 0.5);
+          }
+          
+          osc.connect(gainOsc);
+          gainOsc.connect(this.ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.4);
+        } else {
+          // Neon modulated mains hum buzz explosion
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(60, now);
+          osc.frequency.linearRampToValueAtTime(45, now + 0.5);
+          
+          const mod = this.ctx.createOscillator();
+          const modGain = this.ctx.createGain();
+          mod.type = 'sawtooth';
+          mod.frequency.setValueAtTime(130, now);
+          modGain.gain.setValueAtTime(22, now);
+          
+          gain.gain.setValueAtTime(0.12, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.55);
+          
+          mod.connect(modGain);
+          modGain.connect(osc.frequency);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          
+          mod.start(now);
+          osc.start(now);
+          mod.stop(now + 0.55);
+          osc.stop(now + 0.55);
+        }
+        break;
+      }
+      case 'win': {
+        const notes = [261.63, 329.63, 392.00, 523.25, 659.25];
+        notes.forEach((freq, idx) => {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = (theme === 'neon') ? 'sine' : 'triangle';
           osc.frequency.setValueAtTime(freq, now + idx * 0.08);
           gain.gain.setValueAtTime(0.05, now + idx * 0.08);
           gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.08 + 0.4);
