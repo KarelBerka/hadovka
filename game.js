@@ -78,7 +78,21 @@ const SoundFX = {
     
     switch(type) {
       case 'turn': {
-        if (theme === 'train') {
+        if (theme === 'cats') {
+          // Cute short meow squeak
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(520, now);
+          osc.frequency.quadraticRampToValueAtTime(720, now + 0.06);
+          osc.frequency.linearRampToValueAtTime(460, now + 0.12);
+          gain.gain.setValueAtTime(0.015, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.12);
+        } else if (theme === 'train') {
           // Short steam whistle puff (A5 + C6 chord)
           const osc1 = this.ctx.createOscillator();
           const osc2 = this.ctx.createOscillator();
@@ -130,7 +144,21 @@ const SoundFX = {
         break;
       }
       case 'eat': {
-        if (theme === 'train') {
+        if (theme === 'cats') {
+          // Cute munch chewing "nom nom"
+          const osc1 = this.ctx.createOscillator();
+          const gain1 = this.ctx.createGain();
+          osc1.type = 'triangle';
+          osc1.frequency.setValueAtTime(250, now);
+          osc1.frequency.setValueAtTime(350, now + 0.05);
+          osc1.frequency.setValueAtTime(200, now + 0.1);
+          gain1.gain.setValueAtTime(0.03, now);
+          gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+          osc1.connect(gain1);
+          gain1.connect(this.ctx.destination);
+          osc1.start(now);
+          osc1.stop(now + 0.15);
+        } else if (theme === 'train') {
           // Train crossing bell "Clang!"
           const osc = this.ctx.createOscillator();
           const gain = this.ctx.createGain();
@@ -205,6 +233,33 @@ const SoundFX = {
           gainOsc.connect(this.ctx.destination);
           osc.start(now);
           osc.stop(now + 0.55);
+        } else if (theme === 'cats') {
+          // Startled cat screech fight sound
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(400, now);
+          osc.frequency.linearRampToValueAtTime(800, now + 0.15);
+          osc.frequency.exponentialRampToValueAtTime(150, now + 0.4);
+          
+          const mod = this.ctx.createOscillator();
+          const modGain = this.ctx.createGain();
+          mod.type = 'sine';
+          mod.frequency.setValueAtTime(30, now);
+          modGain.gain.setValueAtTime(40, now);
+          
+          gain.gain.setValueAtTime(0.06, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+          
+          mod.connect(modGain);
+          modGain.connect(osc.frequency);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          
+          mod.start(now);
+          osc.start(now);
+          mod.stop(now + 0.4);
+          osc.stop(now + 0.4);
         } else if (theme === 'retro') {
           // Breaking branches + leaves rustling (noise bandpass filter)
           const osc = this.ctx.createOscillator();
@@ -1951,9 +2006,37 @@ const Game = {
   draw() {
     const isRetro = this.graphicsTheme === 'retro';
     const isTrain = this.graphicsTheme === 'train';
+    const isCats = this.graphicsTheme === 'cats';
     
     // 1. Draw Background
-    if (isTrain) {
+    if (isCats) {
+      // Checkered pastel pink/peach
+      this.ctx.fillStyle = '#ffccd5'; // Darker pink
+      this.ctx.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
+      this.ctx.fillStyle = '#fff0f3'; // Lighter pink
+      for (let x = 0; x < GRID_SIZE; x++) {
+        for (let y = 0; y < GRID_SIZE; y++) {
+          if ((x + y) % 2 === 0) {
+            this.ctx.fillRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+          }
+        }
+      }
+      
+      // Draw subtle white paw prints at some cells
+      this.ctx.fillStyle = 'rgba(255, 255, 255, 0.35)';
+      for (let x = 3; x < GRID_SIZE; x += 6) {
+        for (let y = 4; y < GRID_SIZE; y += 8) {
+          const px = x * CELL_SIZE + CELL_SIZE / 2;
+          const py = y * CELL_SIZE + CELL_SIZE / 2;
+          this.ctx.beginPath();
+          this.ctx.arc(px, py + 2, 3, 0, Math.PI * 2); // main pad
+          this.ctx.arc(px - 3, py - 2, 1.5, 0, Math.PI * 2); // left toe
+          this.ctx.arc(px, py - 3, 1.5, 0, Math.PI * 2); // middle toe
+          this.ctx.arc(px + 3, py - 2, 1.5, 0, Math.PI * 2); // right toe
+          this.ctx.fill();
+        }
+      }
+    } else if (isTrain) {
       // Checkered OpenTTD grass fields
       this.ctx.fillStyle = '#63984c'; // Dark grass
       this.ctx.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
@@ -2014,7 +2097,14 @@ const Game = {
     
     // 2. Draw map outline
     if (!this.bordersWrap) {
-      if (isTrain) {
+      if (isCats) {
+        // Pastel purple retaining wall
+        this.ctx.fillStyle = '#c8b6ff';
+        this.ctx.fillRect(0, 0, CANVAS_SIZE, 6);
+        this.ctx.fillRect(0, CANVAS_SIZE - 6, CANVAS_SIZE, 6);
+        this.ctx.fillRect(0, 0, 6, CANVAS_SIZE);
+        this.ctx.fillRect(CANVAS_SIZE - 6, 0, 6, CANVAS_SIZE);
+      } else if (isTrain) {
         // Red brick retaining border wall
         this.ctx.fillStyle = '#7a2920';
         this.ctx.fillRect(0, 0, CANVAS_SIZE, 6);
@@ -2036,7 +2126,12 @@ const Game = {
     } else {
       // Draw thin wrapping borders indicator
       this.ctx.save();
-      if (isTrain) {
+      if (isCats) {
+        this.ctx.strokeStyle = 'rgba(255, 74, 140, 0.4)';
+        this.ctx.lineWidth = 2;
+        this.ctx.setLineDash([5, 5]);
+        this.ctx.strokeRect(2, 2, CANVAS_SIZE - 4, CANVAS_SIZE - 4);
+      } else if (isTrain) {
         this.ctx.strokeStyle = 'rgba(99, 152, 76, 0.5)';
         this.ctx.lineWidth = 2;
         this.ctx.setLineDash([6, 6]);
@@ -2063,7 +2158,34 @@ const Game = {
       const px = ox * CELL_SIZE;
       const py = oy * CELL_SIZE;
       
-      if (isTrain) {
+      if (isCats) {
+        // Balls of yarn (klubíčka)
+        this.ctx.save();
+        const cx = px + CELL_SIZE / 2;
+        const cy = py + CELL_SIZE / 2;
+        const r = CELL_SIZE / 2 - 2;
+        
+        // base ball
+        this.ctx.fillStyle = '#ff70a6'; // pink yarn
+        this.ctx.beginPath();
+        this.ctx.arc(cx, cy, r, 0, Math.PI * 2);
+        this.ctx.fill();
+        
+        // threads wrapping
+        this.ctx.strokeStyle = '#ff97b7';
+        this.ctx.lineWidth = 1.5;
+        this.ctx.beginPath();
+        this.ctx.arc(cx - 2, cy, r - 2, Math.PI * 0.5, Math.PI * 1.5);
+        this.ctx.stroke();
+        this.ctx.beginPath();
+        this.ctx.arc(cx + 2, cy, r - 2, Math.PI * 1.5, Math.PI * 0.5);
+        this.ctx.stroke();
+        this.ctx.beginPath();
+        this.ctx.moveTo(cx - r + 2, cy - 2);
+        this.ctx.lineTo(cx + r - 2, cy + 2);
+        this.ctx.stroke();
+        this.ctx.restore();
+      } else if (isTrain) {
         // OpenTTD red brick building / depot
         this.ctx.save();
         this.ctx.fillStyle = '#9b382d'; // Red brick
@@ -2113,7 +2235,33 @@ const Game = {
       const pbY = 20 * CELL_SIZE + CELL_SIZE / 2;
       const portalTime = performance.now() * 0.005;
       
-      if (isTrain) {
+      if (isCats) {
+        this.ctx.save();
+        const drawCatBox = (tx, ty, pillowColor) => {
+          const tpx = tx * CELL_SIZE;
+          const tpy = ty * CELL_SIZE;
+          
+          // Cardboard box outer
+          this.ctx.fillStyle = '#d7a15c';
+          this.ctx.fillRect(tpx + 1, tpy + 3, CELL_SIZE - 2, CELL_SIZE - 4);
+          
+          // Dark opening
+          this.ctx.fillStyle = '#5c3a21';
+          this.ctx.fillRect(tpx + 3, tpy + 5, CELL_SIZE - 6, CELL_SIZE - 8);
+          
+          // Pillow inside
+          this.ctx.fillStyle = pillowColor;
+          this.ctx.fillRect(tpx + 4, tpy + CELL_SIZE - 8, CELL_SIZE - 8, 3);
+          
+          // Box flaps
+          this.ctx.fillStyle = '#e2b378';
+          this.ctx.fillRect(tpx - 1, tpy + 1, 4, 3);
+          this.ctx.fillRect(tpx + CELL_SIZE - 3, tpy + 1, 4, 3);
+        };
+        drawCatBox(10, 20, '#00f2fe'); // Box A
+        drawCatBox(30, 20, '#ff6c00'); // Box B
+        this.ctx.restore();
+      } else if (isTrain) {
         this.ctx.save();
         const drawTunnel = (tx, ty, signalColor) => {
           const tpx = tx * CELL_SIZE;
@@ -2183,7 +2331,16 @@ const Game = {
       const cy = py + CELL_SIZE / 2;
       const pulse = Math.sin(performance.now() * 0.01) * 2;
       
-      if (isTrain) {
+      if (isCats) {
+        // Cucumber mine (okurka)
+        this.ctx.save();
+        this.ctx.fillStyle = '#2b9348'; // dark green
+        this.ctx.fillRect(px + 5, py + 3, 10, CELL_SIZE - 6);
+        this.ctx.fillStyle = '#55a630'; // light green bumps
+        this.ctx.fillRect(px + 7, py + 5, 2, 3);
+        this.ctx.fillRect(px + 11, py + 10, 2, 3);
+        this.ctx.restore();
+      } else if (isTrain) {
         this.ctx.save();
         // Track buffer stop barrier
         this.ctx.fillStyle = '#4a2e1b'; // Wooden pillars
@@ -2253,7 +2410,108 @@ const Game = {
       const px = fruit.x * CELL_SIZE;
       const py = fruit.y * CELL_SIZE;
       
-      if (isTrain) {
+      if (isCats) {
+        if (fruit.type === 'NORMAL') {
+          // Fish skeleton
+          this.ctx.save();
+          this.ctx.strokeStyle = '#e0e0e0';
+          this.ctx.lineWidth = 2;
+          this.ctx.beginPath();
+          this.ctx.moveTo(px + 4, py + CELL_SIZE/2);
+          this.ctx.lineTo(px + CELL_SIZE - 4, py + CELL_SIZE/2);
+          this.ctx.stroke();
+          
+          this.ctx.lineWidth = 1.5;
+          this.ctx.beginPath();
+          this.ctx.moveTo(px + 8, py + 4);
+          this.ctx.lineTo(px + 8, py + CELL_SIZE - 4);
+          this.ctx.moveTo(px + 12, py + 4);
+          this.ctx.lineTo(px + 12, py + CELL_SIZE - 4);
+          this.ctx.stroke();
+          
+          this.ctx.fillStyle = '#e0e0e0';
+          this.ctx.beginPath();
+          this.ctx.moveTo(px + CELL_SIZE - 4, py + CELL_SIZE/2);
+          this.ctx.lineTo(px + CELL_SIZE - 8, py + 4);
+          this.ctx.lineTo(px + CELL_SIZE - 8, py + CELL_SIZE - 4);
+          this.ctx.fill();
+          this.ctx.restore();
+        } else if (fruit.type === 'GOLDEN') {
+          // Golden fish
+          this.ctx.save();
+          this.ctx.fillStyle = '#ffaa00';
+          this.ctx.beginPath();
+          this.ctx.arc(px + 9, py + CELL_SIZE/2, 5, 0, Math.PI * 2);
+          this.ctx.fill();
+          
+          this.ctx.beginPath();
+          this.ctx.moveTo(px + 4, py + CELL_SIZE/2);
+          this.ctx.lineTo(px + 1, py + 4);
+          this.ctx.lineTo(px + 1, py + CELL_SIZE - 4);
+          this.ctx.fill();
+          
+          this.ctx.fillStyle = '#000000';
+          this.ctx.fillRect(px + 11, py + 8, 1.5, 1.5);
+          this.ctx.restore();
+        } else if (fruit.type === 'CHILI') {
+          // Mouse toy
+          this.ctx.save();
+          this.ctx.fillStyle = '#b0b0b0';
+          this.ctx.beginPath();
+          this.ctx.arc(px + 8, py + CELL_SIZE/2 + 1, 4, 0, Math.PI * 2);
+          this.ctx.fill();
+          
+          this.ctx.fillStyle = '#ffb7c5';
+          this.ctx.beginPath();
+          this.ctx.arc(px + 9, py + 7, 2, 0, Math.PI * 2);
+          this.ctx.arc(px + 5, py + 7, 2, 0, Math.PI * 2);
+          this.ctx.fill();
+          
+          this.ctx.strokeStyle = '#b0b0b0';
+          this.ctx.lineWidth = 1;
+          this.ctx.beginPath();
+          this.ctx.moveTo(px + 12, py + CELL_SIZE/2 + 2);
+          this.ctx.quadraticCurveTo(px + 16, py + CELL_SIZE/2, px + 18, py + CELL_SIZE/2 + 4);
+          this.ctx.stroke();
+          this.ctx.restore();
+        } else if (fruit.type === 'BERRY') {
+          // Bowl of milk
+          this.ctx.save();
+          this.ctx.fillStyle = '#90e0ef';
+          this.ctx.beginPath();
+          this.ctx.arc(px + CELL_SIZE/2, py + CELL_SIZE - 5, 6, 0, Math.PI, false);
+          this.ctx.fill();
+          
+          this.ctx.fillStyle = '#ffffff';
+          this.ctx.fillRect(px + CELL_SIZE/2 - 6, py + CELL_SIZE - 7, 12, 3);
+          this.ctx.restore();
+        } else if (fruit.type === 'MYSTERY') {
+          // Present box
+          this.ctx.save();
+          this.ctx.fillStyle = '#e0aaff';
+          this.ctx.fillRect(px + 3, py + 5, 14, 12);
+          this.ctx.fillStyle = '#ffd700';
+          this.ctx.fillRect(px + 9, py + 5, 2, 12);
+          this.ctx.fillRect(px + 3, py + 10, 14, 2);
+          
+          this.ctx.beginPath();
+          this.ctx.arc(px + 7, py + 4, 2, 0, Math.PI * 2);
+          this.ctx.arc(px + 13, py + 4, 2, 0, Math.PI * 2);
+          this.ctx.fill();
+          this.ctx.restore();
+        } else if (fruit.type === 'MUSHROOM') {
+          // Golden collar
+          this.ctx.save();
+          this.ctx.fillStyle = '#ff4d6d';
+          this.ctx.fillRect(px + 2, py + 8, CELL_SIZE - 4, 3);
+          
+          this.ctx.fillStyle = '#ffd700';
+          this.ctx.beginPath();
+          this.ctx.arc(px + CELL_SIZE/2, py + 12, 3, 0, Math.PI * 2);
+          this.ctx.fill();
+          this.ctx.restore();
+        }
+      } else if (isTrain) {
         if (fruit.type === 'NORMAL') {
           // Passenger suitcase
           this.ctx.save();
@@ -2430,7 +2688,140 @@ const Game = {
     this.snakes.forEach(snake => {
       if (!snake.alive || snake.body.length === 0) return;
       
-      if (isTrain) {
+      if (isCats) {
+        // Draw fluffy cat segments
+        snake.body.forEach((seg, idx) => {
+          const px = seg.x * CELL_SIZE;
+          const py = seg.y * CELL_SIZE;
+          const isHead = idx === 0;
+          
+          this.ctx.save();
+          
+          const drawCatSegment = (bx, by) => {
+            this.ctx.fillStyle = snake.color;
+            this.ctx.beginPath();
+            this.ctx.arc(bx + CELL_SIZE/2, by + CELL_SIZE/2, CELL_SIZE/2 - 1, 0, Math.PI * 2);
+            this.ctx.fill();
+            
+            // Cat spots
+            this.ctx.fillStyle = 'rgba(0, 0, 0, 0.12)';
+            this.ctx.fillRect(bx + 4, by + 4, 3, 3);
+            this.ctx.fillRect(bx + CELL_SIZE - 7, by + CELL_SIZE - 7, 3, 3);
+          };
+          
+          const drawCatHead = (bx, by) => {
+            this.ctx.fillStyle = snake.color;
+            this.ctx.beginPath();
+            this.ctx.arc(bx + CELL_SIZE/2, by + CELL_SIZE/2, CELL_SIZE/2 - 1, 0, Math.PI * 2);
+            this.ctx.fill();
+            
+            const dir = snake.dirIndex;
+            const cx = bx + CELL_SIZE/2;
+            const cy = by + CELL_SIZE/2;
+            
+            this.ctx.fillStyle = snake.color;
+            let ear1 = [], ear2 = [];
+            let eyes = [];
+            let nose = { x: cx, y: cy };
+            let whiskers = [];
+            
+            if (dir === 0) { // Up
+              ear1 = [bx + 2, by + 4, bx + 5, by - 1, bx + 8, by + 3];
+              ear2 = [bx + 12, by + 3, bx + 15, by - 1, bx + 18, by + 4];
+              eyes = [{x: cx - 4, y: cy - 2}, {x: cx + 4, y: cy - 2}];
+              whiskers = [[cx - 8, cy, cx - 3, cy], [cx + 3, cy, cx + 8, cy]];
+            } else if (dir === 1) { // Right
+              ear1 = [bx + 12, by + 2, bx + 17, by + 5, bx + 13, by + 8];
+              ear2 = [bx + 12, by + 12, bx + 17, by + 15, bx + 13, by + 18];
+              eyes = [{x: cx + 2, y: cy - 4}, {x: cx + 2, y: cy + 4}];
+              whiskers = [[cx, cy - 8, cx, cy - 3], [cx, cy + 3, cx, cy + 8]];
+            } else if (dir === 2) { // Down
+              ear1 = [bx + 2, by + 12, bx + 5, by + 17, bx + 8, by + 13];
+              ear2 = [bx + 12, by + 13, bx + 15, by + 17, bx + 18, by + 12];
+              eyes = [{x: cx - 4, y: cy + 2}, {x: cx + 4, y: cy + 2}];
+              whiskers = [[cx - 8, cy, cx - 3, cy], [cx + 3, cy, cx + 8, cy]];
+            } else { // Left
+              ear1 = [bx + 4, by + 2, bx - 1, by + 5, bx + 3, by + 8];
+              ear2 = [bx + 4, by + 12, bx - 1, by + 15, bx + 3, by + 18];
+              eyes = [{x: cx - 2, y: cy - 4}, {x: cx - 2, y: cy + 4}];
+              whiskers = [[cx, cy - 8, cx, cy - 3], [cx, cy + 3, cx, cy + 8]];
+            }
+            
+            // Draw ears
+            const drawTriangle = (p) => {
+              this.ctx.beginPath();
+              this.ctx.moveTo(p[0], p[1]);
+              this.ctx.lineTo(p[2], p[3]);
+              this.ctx.lineTo(p[4], p[5]);
+              this.ctx.closePath();
+              this.ctx.fill();
+              
+              this.ctx.fillStyle = '#ffccd5';
+              this.ctx.beginPath();
+              this.ctx.moveTo((p[0]+p[2])/2, (p[1]+p[3])/2);
+              this.ctx.lineTo(p[2], p[3]);
+              this.ctx.lineTo((p[4]+p[2])/2, (p[5]+p[3])/2);
+              this.ctx.closePath();
+              this.ctx.fill();
+              this.ctx.fillStyle = snake.color;
+            };
+            drawTriangle(ear1);
+            drawTriangle(ear2);
+            
+            // Eyes
+            eyes.forEach(e => {
+              this.ctx.fillStyle = '#ffffff';
+              this.ctx.beginPath();
+              this.ctx.arc(e.x, e.y, 2.5, 0, Math.PI * 2);
+              this.ctx.fill();
+              
+              this.ctx.fillStyle = '#000000';
+              this.ctx.beginPath();
+              this.ctx.arc(e.x, e.y, 1.2, 0, Math.PI * 2);
+              this.ctx.fill();
+            });
+            
+            // Pink nose
+            this.ctx.fillStyle = '#ff4d6d';
+            this.ctx.beginPath();
+            this.ctx.arc(nose.x, nose.y, 1.2, 0, Math.PI * 2);
+            this.ctx.fill();
+            
+            // Whiskers
+            this.ctx.strokeStyle = '#ffffff';
+            this.ctx.lineWidth = 1;
+            whiskers.forEach(w => {
+              this.ctx.beginPath();
+              this.ctx.moveTo(w[0], w[1]);
+              this.ctx.lineTo(w[2], w[3]);
+              this.ctx.stroke();
+            });
+          };
+          
+          if (isHead) {
+            if (snake.activeEffect === 'gold_mushroom') {
+              drawCatHead(px, py);
+              const sideOffsets = this.getSegmentSidewaysOffsets(snake, idx);
+              sideOffsets.forEach(off => {
+                drawCatHead(off.x * CELL_SIZE, off.y * CELL_SIZE);
+              });
+            } else {
+              drawCatHead(px, py);
+            }
+          } else {
+            if (snake.activeEffect === 'gold_mushroom') {
+              drawCatSegment(px, py);
+              const sideOffsets = this.getSegmentSidewaysOffsets(snake, idx);
+              sideOffsets.forEach(off => {
+                drawCatSegment(off.x * CELL_SIZE, off.y * CELL_SIZE);
+              });
+            } else {
+              drawCatSegment(px, py);
+            }
+          }
+          this.ctx.restore();
+        });
+      } else if (isTrain) {
         // Draw OpenTTD train cars
         snake.body.forEach((seg, idx) => {
           const px = seg.x * CELL_SIZE;
