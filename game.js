@@ -2171,9 +2171,14 @@ const Game = {
         this.ctx.arc(cx, cy, r, 0, Math.PI * 2);
         this.ctx.fill();
         
-        // threads wrapping
-        this.ctx.strokeStyle = '#ff97b7';
+        // dark outline
+        this.ctx.strokeStyle = '#2b2b2b';
         this.ctx.lineWidth = 1.5;
+        this.ctx.stroke();
+        
+        // threads wrapping (dark for high contrast)
+        this.ctx.strokeStyle = '#2b2b2b';
+        this.ctx.lineWidth = 1.2;
         this.ctx.beginPath();
         this.ctx.arc(cx - 2, cy, r - 2, Math.PI * 0.5, Math.PI * 1.5);
         this.ctx.stroke();
@@ -2245,8 +2250,13 @@ const Game = {
           this.ctx.fillStyle = '#d7a15c';
           this.ctx.fillRect(tpx + 1, tpy + 3, CELL_SIZE - 2, CELL_SIZE - 4);
           
+          // Dark outline around box
+          this.ctx.strokeStyle = '#2b2b2b';
+          this.ctx.lineWidth = 1.5;
+          this.ctx.strokeRect(tpx + 1, tpy + 3, CELL_SIZE - 2, CELL_SIZE - 4);
+          
           // Dark opening
-          this.ctx.fillStyle = '#5c3a21';
+          this.ctx.fillStyle = '#402816';
           this.ctx.fillRect(tpx + 3, tpy + 5, CELL_SIZE - 6, CELL_SIZE - 8);
           
           // Pillow inside
@@ -2256,7 +2266,9 @@ const Game = {
           // Box flaps
           this.ctx.fillStyle = '#e2b378';
           this.ctx.fillRect(tpx - 1, tpy + 1, 4, 3);
+          this.ctx.strokeRect(tpx - 1, tpy + 1, 4, 3);
           this.ctx.fillRect(tpx + CELL_SIZE - 3, tpy + 1, 4, 3);
+          this.ctx.strokeRect(tpx + CELL_SIZE - 3, tpy + 1, 4, 3);
         };
         drawCatBox(10, 20, '#00f2fe'); // Box A
         drawCatBox(30, 20, '#ff6c00'); // Box B
@@ -2336,6 +2348,10 @@ const Game = {
         this.ctx.save();
         this.ctx.fillStyle = '#2b9348'; // dark green
         this.ctx.fillRect(px + 5, py + 3, 10, CELL_SIZE - 6);
+        this.ctx.strokeStyle = '#2b2b2b';
+        this.ctx.lineWidth = 1.5;
+        this.ctx.strokeRect(px + 5, py + 3, 10, CELL_SIZE - 6);
+        
         this.ctx.fillStyle = '#55a630'; // light green bumps
         this.ctx.fillRect(px + 7, py + 5, 2, 3);
         this.ctx.fillRect(px + 11, py + 10, 2, 3);
@@ -2412,16 +2428,16 @@ const Game = {
       
       if (isCats) {
         if (fruit.type === 'NORMAL') {
-          // Fish skeleton
+          // Fish skeleton (charcoal for high contrast)
           this.ctx.save();
-          this.ctx.strokeStyle = '#e0e0e0';
-          this.ctx.lineWidth = 2;
+          this.ctx.strokeStyle = '#2b2b2b';
+          this.ctx.lineWidth = 2.2;
           this.ctx.beginPath();
           this.ctx.moveTo(px + 4, py + CELL_SIZE/2);
           this.ctx.lineTo(px + CELL_SIZE - 4, py + CELL_SIZE/2);
           this.ctx.stroke();
           
-          this.ctx.lineWidth = 1.5;
+          this.ctx.lineWidth = 1.8;
           this.ctx.beginPath();
           this.ctx.moveTo(px + 8, py + 4);
           this.ctx.lineTo(px + 8, py + CELL_SIZE - 4);
@@ -2429,7 +2445,7 @@ const Game = {
           this.ctx.lineTo(px + 12, py + CELL_SIZE - 4);
           this.ctx.stroke();
           
-          this.ctx.fillStyle = '#e0e0e0';
+          this.ctx.fillStyle = '#2b2b2b';
           this.ctx.beginPath();
           this.ctx.moveTo(px + CELL_SIZE - 4, py + CELL_SIZE/2);
           this.ctx.lineTo(px + CELL_SIZE - 8, py + 4);
@@ -2450,25 +2466,44 @@ const Game = {
           this.ctx.lineTo(px + 1, py + CELL_SIZE - 4);
           this.ctx.fill();
           
+          this.ctx.strokeStyle = '#2b2b2b';
+          this.ctx.lineWidth = 1.2;
+          this.ctx.beginPath();
+          this.ctx.arc(px + 9, py + CELL_SIZE/2, 5, 0, Math.PI * 2);
+          this.ctx.stroke();
+          this.ctx.beginPath();
+          this.ctx.moveTo(px + 4, py + CELL_SIZE/2);
+          this.ctx.lineTo(px + 1, py + 4);
+          this.ctx.lineTo(px + 1, py + CELL_SIZE - 4);
+          this.ctx.closePath();
+          this.ctx.stroke();
+          
           this.ctx.fillStyle = '#000000';
           this.ctx.fillRect(px + 11, py + 8, 1.5, 1.5);
           this.ctx.restore();
         } else if (fruit.type === 'CHILI') {
-          // Mouse toy
+          // Mouse toy (darker grey + outlines)
           this.ctx.save();
-          this.ctx.fillStyle = '#b0b0b0';
+          this.ctx.fillStyle = '#7a7a7a';
           this.ctx.beginPath();
           this.ctx.arc(px + 8, py + CELL_SIZE/2 + 1, 4, 0, Math.PI * 2);
           this.ctx.fill();
+          
+          this.ctx.strokeStyle = '#2b2b2b';
+          this.ctx.lineWidth = 1.2;
+          this.ctx.beginPath();
+          this.ctx.arc(px + 8, py + CELL_SIZE/2 + 1, 4, 0, Math.PI * 2);
+          this.ctx.stroke();
           
           this.ctx.fillStyle = '#ffb7c5';
           this.ctx.beginPath();
           this.ctx.arc(px + 9, py + 7, 2, 0, Math.PI * 2);
           this.ctx.arc(px + 5, py + 7, 2, 0, Math.PI * 2);
           this.ctx.fill();
+          this.ctx.stroke();
           
-          this.ctx.strokeStyle = '#b0b0b0';
-          this.ctx.lineWidth = 1;
+          this.ctx.strokeStyle = '#2b2b2b';
+          this.ctx.lineWidth = 1.2;
           this.ctx.beginPath();
           this.ctx.moveTo(px + 12, py + CELL_SIZE/2 + 2);
           this.ctx.quadraticCurveTo(px + 16, py + CELL_SIZE/2, px + 18, py + CELL_SIZE/2 + 4);
@@ -2482,33 +2517,53 @@ const Game = {
           this.ctx.arc(px + CELL_SIZE/2, py + CELL_SIZE - 5, 6, 0, Math.PI, false);
           this.ctx.fill();
           
+          this.ctx.strokeStyle = '#2b2b2b';
+          this.ctx.lineWidth = 1.2;
+          this.ctx.beginPath();
+          this.ctx.arc(px + CELL_SIZE/2, py + CELL_SIZE - 5, 6, 0, Math.PI, false);
+          this.ctx.stroke();
+          
           this.ctx.fillStyle = '#ffffff';
           this.ctx.fillRect(px + CELL_SIZE/2 - 6, py + CELL_SIZE - 7, 12, 3);
+          this.ctx.strokeStyle = '#2b2b2b';
+          this.ctx.strokeRect(px + CELL_SIZE/2 - 6, py + CELL_SIZE - 7, 12, 3);
           this.ctx.restore();
         } else if (fruit.type === 'MYSTERY') {
           // Present box
           this.ctx.save();
           this.ctx.fillStyle = '#e0aaff';
           this.ctx.fillRect(px + 3, py + 5, 14, 12);
+          
+          this.ctx.strokeStyle = '#2b2b2b';
+          this.ctx.lineWidth = 1.2;
+          this.ctx.strokeRect(px + 3, py + 5, 14, 12);
+          
           this.ctx.fillStyle = '#ffd700';
           this.ctx.fillRect(px + 9, py + 5, 2, 12);
           this.ctx.fillRect(px + 3, py + 10, 14, 2);
           
+          this.ctx.fillStyle = '#ffd700';
           this.ctx.beginPath();
           this.ctx.arc(px + 7, py + 4, 2, 0, Math.PI * 2);
           this.ctx.arc(px + 13, py + 4, 2, 0, Math.PI * 2);
           this.ctx.fill();
+          this.ctx.strokeStyle = '#2b2b2b';
+          this.ctx.stroke();
           this.ctx.restore();
         } else if (fruit.type === 'MUSHROOM') {
           // Golden collar
           this.ctx.save();
           this.ctx.fillStyle = '#ff4d6d';
           this.ctx.fillRect(px + 2, py + 8, CELL_SIZE - 4, 3);
+          this.ctx.strokeStyle = '#2b2b2b';
+          this.ctx.lineWidth = 1.2;
+          this.ctx.strokeRect(px + 2, py + 8, CELL_SIZE - 4, 3);
           
           this.ctx.fillStyle = '#ffd700';
           this.ctx.beginPath();
           this.ctx.arc(px + CELL_SIZE/2, py + 12, 3, 0, Math.PI * 2);
           this.ctx.fill();
+          this.ctx.stroke();
           this.ctx.restore();
         }
       } else if (isTrain) {
@@ -2703,6 +2758,11 @@ const Game = {
             this.ctx.arc(bx + CELL_SIZE/2, by + CELL_SIZE/2, CELL_SIZE/2 - 1, 0, Math.PI * 2);
             this.ctx.fill();
             
+            // outline
+            this.ctx.strokeStyle = '#2b2b2b';
+            this.ctx.lineWidth = 1.5;
+            this.ctx.stroke();
+            
             // Cat spots
             this.ctx.fillStyle = 'rgba(0, 0, 0, 0.12)';
             this.ctx.fillRect(bx + 4, by + 4, 3, 3);
@@ -2714,6 +2774,11 @@ const Game = {
             this.ctx.beginPath();
             this.ctx.arc(bx + CELL_SIZE/2, by + CELL_SIZE/2, CELL_SIZE/2 - 1, 0, Math.PI * 2);
             this.ctx.fill();
+            
+            // outline
+            this.ctx.strokeStyle = '#2b2b2b';
+            this.ctx.lineWidth = 1.5;
+            this.ctx.stroke();
             
             const dir = snake.dirIndex;
             const cx = bx + CELL_SIZE/2;
@@ -2756,6 +2821,11 @@ const Game = {
               this.ctx.closePath();
               this.ctx.fill();
               
+              // outline ear
+              this.ctx.strokeStyle = '#2b2b2b';
+              this.ctx.lineWidth = 1.5;
+              this.ctx.stroke();
+              
               this.ctx.fillStyle = '#ffccd5';
               this.ctx.beginPath();
               this.ctx.moveTo((p[0]+p[2])/2, (p[1]+p[3])/2);
@@ -2775,6 +2845,10 @@ const Game = {
               this.ctx.arc(e.x, e.y, 2.5, 0, Math.PI * 2);
               this.ctx.fill();
               
+              this.ctx.strokeStyle = '#2b2b2b';
+              this.ctx.lineWidth = 1;
+              this.ctx.stroke();
+              
               this.ctx.fillStyle = '#000000';
               this.ctx.beginPath();
               this.ctx.arc(e.x, e.y, 1.2, 0, Math.PI * 2);
@@ -2787,9 +2861,9 @@ const Game = {
             this.ctx.arc(nose.x, nose.y, 1.2, 0, Math.PI * 2);
             this.ctx.fill();
             
-            // Whiskers
-            this.ctx.strokeStyle = '#ffffff';
-            this.ctx.lineWidth = 1;
+            // Whiskers (dark whiskers for high contrast!)
+            this.ctx.strokeStyle = '#2b2b2b';
+            this.ctx.lineWidth = 1.2;
             whiskers.forEach(w => {
               this.ctx.beginPath();
               this.ctx.moveTo(w[0], w[1]);
